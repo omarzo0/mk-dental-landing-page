@@ -1,42 +1,39 @@
-import { Polar } from "@polar-sh/sdk";
-
-const polarClient = new Polar({
-  accessToken: process.env.POLAR_ACCESS_TOKEN,
-  server: (process.env.POLAR_ENVIRONMENT as "production" | "sandbox") || "production",
-});
+/**
+ * Payment service placeholder
+ * TODO: Integrate with actual payment provider when ready
+ */
 
 /**
- * Get a Polar customer by user ID (mocked)
+ * Get a customer by user ID (placeholder)
  */
 export async function getCustomerByUserId(userId: string) {
   return null;
 }
 
 /**
- * Get customer state from Polar API (mocked)
+ * Get customer state (placeholder)
  */
 export async function getCustomerState(userId: string) {
   return null;
 }
 
 /**
- * Get all subscriptions for a user (mocked)
+ * Get all subscriptions for a user (placeholder)
  */
 export async function getUserSubscriptions(userId: string) {
   return [];
 }
 
 /**
- * Check if a user has an active subscription (mocked)
+ * Check if a user has an active subscription (placeholder)
  */
 export async function hasActiveSubscription(userId: string): Promise<boolean> {
   return false;
 }
 
 /**
- * Get checkout URL for a specific product (mocked)
+ * Get checkout URL for a specific product (placeholder)
  */
 export async function getCheckoutUrl(customerId: string, productSlug: string): Promise<string | null> {
   return null;
 }
-
