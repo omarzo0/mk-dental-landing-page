@@ -1,0 +1,246 @@
+"use client";
+
+import * as React from "react";
+
+import { useCart } from "~/lib/hooks/use-cart";
+import { ProductCard } from "~/ui/components/product-card";
+import { Button } from "~/ui/primitives/button";
+
+/* -------------------------------------------------------------------------- */
+/*                                   Types                                    */
+/* -------------------------------------------------------------------------- */
+
+type Category = string;
+
+interface Product {
+  category: string;
+  id: string;
+  image: string;
+  inStock: boolean;
+  name: string;
+  originalPrice?: number;
+  price: number;
+  rating: number;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                            Helpers / utilities                             */
+/* -------------------------------------------------------------------------- */
+
+const slugify = (str: string) =>
+  str
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "");
+
+/* -------------------------------------------------------------------------- */
+/*                               Mock data                                    */
+/* -------------------------------------------------------------------------- */
+
+const products: Product[] = [
+  {
+    category: "Diagnostic Instruments",
+    id: "1",
+    image:
+      "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=800&auto=format&fit=crop&q=60",
+    inStock: true,
+    name: "Professional Dental Mirror Set",
+    originalPrice: 89.99,
+    price: 69.99,
+    rating: 4.8,
+  },
+  {
+    category: "Surgical Instruments",
+    id: "2",
+    image:
+      "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=800&auto=format&fit=crop&q=60",
+    inStock: true,
+    name: "Dental Extraction Forceps Kit",
+    originalPrice: 299.99,
+    price: 249.99,
+    rating: 4.9,
+  },
+  {
+    category: "Diagnostic Instruments",
+    id: "3",
+    image:
+      "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&auto=format&fit=crop&q=60",
+    inStock: false,
+    name: "Dental Explorer Set (Double-Ended)",
+    originalPrice: 79.99,
+    price: 59.99,
+    rating: 4.7,
+  },
+  {
+    category: "Restorative Tools",
+    id: "4",
+    image:
+      "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=800&auto=format&fit=crop&q=60",
+    inStock: true,
+    name: "Composite Filling Instrument Set",
+    originalPrice: 159.99,
+    price: 129.99,
+    rating: 4.6,
+  },
+  {
+    category: "Hygiene Equipment",
+    id: "5",
+    image:
+      "https://images.unsplash.com/photo-1598256989800-fe5f95da9787?w=800&auto=format&fit=crop&q=60",
+    inStock: true,
+    name: "Ultrasonic Scaler Unit",
+    originalPrice: 599.99,
+    price: 499.99,
+    rating: 4.9,
+  },
+  {
+    category: "Surgical Instruments",
+    id: "6",
+    image:
+      "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&auto=format&fit=crop&q=60",
+    inStock: true,
+    name: "Periodontal Curette Set",
+    originalPrice: 189.99,
+    price: 149.99,
+    rating: 4.8,
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/*                              Component                                     */
+/* -------------------------------------------------------------------------- */
+
+export default function ProductsPage() {
+  const { addItem } = useCart();
+
+  /* ----------------------- Categories (derived) ------------------------- */
+  const categories: Category[] = React.useMemo(() => {
+    const dynamic = Array.from(new Set(products.map((p) => p.category))).sort();
+    return ["All", ...dynamic];
+  }, []);
+
+  /* ----------------------------- State ---------------------------------- */
+  const [selectedCategory, setSelectedCategory] =
+    React.useState<Category>("All");
+
+  /* --------------------- Filtered products (memo) ----------------------- */
+  const filteredProducts = React.useMemo(
+    () =>
+      selectedCategory === "All"
+        ? products
+        : products.filter((p) => p.category === selectedCategory),
+    [selectedCategory],
+  );
+
+  /* --------------------------- Handlers --------------------------------- */
+  const handleAddToCart = React.useCallback(
+    (productId: string) => {
+      const product = products.find((p) => p.id === productId);
+      if (product) {
+        addItem(
+          {
+            category: product.category,
+            id: product.id,
+            image: product.image,
+            name: product.name,
+            price: product.price,
+          },
+          1, // (quantity) always adds 1 item to the cart
+        );
+      }
+    },
+    [addItem],
+  );
+
+  const handleAddToWishlist = React.useCallback((productId: string) => {
+    // TODO: integrate with Wishlist feature
+    console.log(`Added ${productId} to wishlist`);
+  }, []);
+
+  /* ----------------------------- Render --------------------------------- */
+  return (
+    <div className="flex min-h-screen flex-col">
+      <main className="flex-1 py-6 sm:py-10">
+        <div
+          className={`
+            container px-4
+            sm:px-6
+          `}
+        >
+          {/* Heading */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dental Instruments</h1>
+            <p className="mt-1 text-base text-muted-foreground sm:text-lg">
+              Browse our professional dental tools and equipment for your practice.
+            </p>
+          </div>
+
+          {/* Category pills */}
+          <div className="mb-8 -mx-4 px-4 overflow-x-auto sm:mx-0 sm:px-0 sm:overflow-visible">
+            <div className="flex gap-2 pb-2 sm:flex-wrap sm:pb-0">
+              {categories.map((category) => (
+                <Button
+                  aria-pressed={category === selectedCategory}
+                  className="rounded-full whitespace-nowrap flex-shrink-0"
+                  key={slugify(category)}
+                  onClick={() => setSelectedCategory(category)}
+                  size="sm"
+                  title={`Filter by ${category}`}
+                  variant={
+                    category === selectedCategory ? "default" : "outline"
+                  }
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Product grid */}
+          <div
+            className={`
+              grid grid-cols-1 gap-4
+              sm:grid-cols-2 sm:gap-6
+              md:grid-cols-3
+              lg:grid-cols-4
+            `}
+          >
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                onAddToCart={handleAddToCart}
+                onAddToWishlist={handleAddToWishlist}
+                product={product}
+              />
+            ))}
+          </div>
+
+          {/* Empty state */}
+          {filteredProducts.length === 0 && (
+            <div className="mt-8 text-center">
+              <p className="text-muted-foreground">
+                No products found in this category.
+              </p>
+            </div>
+          )}
+
+          {/* Pagination */}
+          <nav
+            aria-label="Pagination"
+            className="mt-8 flex items-center justify-center gap-1 sm:mt-12 sm:gap-2"
+          >
+            <Button disabled variant="outline" size="sm" className="sm:size-default">
+              Previous
+            </Button>
+            <Button aria-current="page" variant="default" size="sm" className="sm:size-default">
+              1
+            </Button>
+            <Button disabled variant="outline" size="sm" className="sm:size-default">
+              Next
+            </Button>
+          </nav>
+        </div>
+      </main>
+    </div>
+  );
+}
