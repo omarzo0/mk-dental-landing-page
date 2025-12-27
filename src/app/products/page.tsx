@@ -1,10 +1,13 @@
 "use client";
 
+import { Package, Search } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
 import { useCart } from "~/lib/hooks/use-cart";
 import { ProductCard } from "~/ui/components/product-card";
 import { Button } from "~/ui/primitives/button";
+import { Input } from "~/ui/primitives/input";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -122,15 +125,29 @@ export default function ProductsPage() {
   /* ----------------------------- State ---------------------------------- */
   const [selectedCategory, setSelectedCategory] =
     React.useState<Category>("All");
+  const [searchQuery, setSearchQuery] = React.useState("");
 
   /* --------------------- Filtered products (memo) ----------------------- */
-  const filteredProducts = React.useMemo(
-    () =>
-      selectedCategory === "All"
-        ? products
-        : products.filter((p) => p.category === selectedCategory),
-    [selectedCategory],
-  );
+  const filteredProducts = React.useMemo(() => {
+    let result = products;
+    
+    // Filter by category
+    if (selectedCategory !== "All") {
+      result = result.filter((p) => p.category === selectedCategory);
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query)
+      );
+    }
+    
+    return result;
+  }, [selectedCategory, searchQuery]);
 
   /* --------------------------- Handlers --------------------------------- */
   const handleAddToCart = React.useCallback(
@@ -168,15 +185,35 @@ export default function ProductsPage() {
           `}
         >
           {/* Heading */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dental Instruments</h1>
-            <p className="mt-1 text-base text-muted-foreground sm:text-lg">
-              Browse our professional dental tools and equipment for your practice.
-            </p>
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dental Instruments</h1>
+              <p className="mt-1 text-base text-muted-foreground sm:text-lg">
+                Browse our professional dental tools and equipment for your practice.
+              </p>
+            </div>
+            <Link href="/packages">
+              <Button variant="outline" className="gap-2 whitespace-nowrap">
+                <Package className="h-4 w-4" />
+                View Packages
+              </Button>
+            </Link>
+          </div>
+
+          {/* Search bar */}
+          <div className="mb-4 relative max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
 
           {/* Category pills */}
-          <div className="mb-8 -mx-4 px-4 overflow-x-auto sm:mx-0 sm:px-0 sm:overflow-visible">
+          <div className="mb-4 -mx-4 px-4 overflow-x-auto sm:mx-0 sm:px-0 sm:overflow-visible">
             <div className="flex gap-2 pb-2 sm:flex-wrap sm:pb-0">
               {categories.map((category) => (
                 <Button
@@ -196,13 +233,19 @@ export default function ProductsPage() {
             </div>
           </div>
 
+          {/* Product count */}
+          <div className="mb-6 text-sm text-muted-foreground">
+            Showing {filteredProducts.length} of {products.length} products
+            {searchQuery && ` for "${searchQuery}"`}
+            {selectedCategory !== "All" && ` in ${selectedCategory}`}
+          </div>
+
           {/* Product grid */}
           <div
             className={`
-              grid grid-cols-1 gap-4
-              sm:grid-cols-2 sm:gap-6
-              md:grid-cols-3
-              lg:grid-cols-4
+              mx-auto grid max-w-4xl grid-cols-1 gap-4
+              sm:grid-cols-2 sm:gap-5
+              lg:grid-cols-3 lg:gap-6
             `}
           >
             {filteredProducts.map((product) => (
@@ -218,9 +261,21 @@ export default function ProductsPage() {
           {/* Empty state */}
           {filteredProducts.length === 0 && (
             <div className="mt-8 text-center">
-              <p className="text-muted-foreground">
-                No products found in this category.
+              <Search className="mx-auto h-12 w-12 text-muted-foreground/50" />
+              <p className="mt-4 text-muted-foreground">
+                No products found{searchQuery && ` for "${searchQuery}"`}
+                {selectedCategory !== "All" && ` in ${selectedCategory}`}.
               </p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCategory("All");
+                }}
+              >
+                Clear filters
+              </Button>
             </div>
           )}
 

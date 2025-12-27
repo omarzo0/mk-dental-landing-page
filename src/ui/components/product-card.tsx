@@ -77,7 +77,7 @@ export function ProductCard({
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             className={cn(
-              "h-4 w-4",
+              "h-3 w-3 sm:h-4 sm:w-4",
               i < fullStars
                 ? "fill-yellow-400 text-yellow-400"
                 : i === fullStars && hasHalfStar
@@ -88,7 +88,7 @@ export function ProductCard({
           />
         ))}
         {rating > 0 && (
-          <span className="ml-1 text-xs text-muted-foreground">
+          <span className="ml-1 text-[10px] text-muted-foreground sm:text-xs">
             {rating.toFixed(1)}
           </span>
         )}
@@ -128,7 +128,9 @@ export function ProductCard({
             {/* Category badge */}
             <Badge
               className={`
-                absolute top-2 left-2 bg-background/80 backdrop-blur-sm
+                absolute top-1 left-1 bg-background/80 backdrop-blur-sm text-[9px] max-w-[70%] truncate px-1.5 py-0.5
+                sm:text-[10px] sm:top-1.5 sm:left-1.5 sm:px-2 sm:py-0.5
+                md:text-xs md:top-2 md:left-2 md:max-w-none
               `}
               variant="outline"
             >
@@ -139,11 +141,13 @@ export function ProductCard({
             {discount > 0 && (
               <Badge
                 className={`
-                absolute top-2 right-2 bg-destructive
+                absolute top-1 right-1 bg-destructive text-[9px] px-1 py-0.5
+                sm:text-[10px] sm:top-1.5 sm:right-1.5 sm:px-1.5
+                md:text-xs md:top-2 md:right-2
                 text-destructive-foreground
               `}
               >
-                {discount}% OFF
+                -{discount}%
               </Badge>
             )}
 
@@ -151,10 +155,12 @@ export function ProductCard({
             <Button
               className={cn(
                 `
-                  absolute right-2 bottom-2 z-10 rounded-full bg-background/80
+                  absolute right-1 bottom-1 z-10 h-6 w-6 rounded-full bg-background/80
                   backdrop-blur-sm transition-opacity duration-300
+                  sm:right-1.5 sm:bottom-1.5 sm:h-7 sm:w-7
+                  md:right-2 md:bottom-2 md:h-9 md:w-9
                 `,
-                !isHovered && !isInWishlist && "opacity-0"
+                !isHovered && !isInWishlist && "opacity-0 group-hover:opacity-100"
               )}
               onClick={handleAddToWishlist}
               size="icon"
@@ -163,7 +169,7 @@ export function ProductCard({
             >
               <Heart
                 className={cn(
-                  "h-4 w-4",
+                  "h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4",
                   isInWishlist
                     ? "fill-destructive text-destructive"
                     : "text-muted-foreground"
@@ -173,11 +179,12 @@ export function ProductCard({
             </Button>
           </div>
 
-          <CardContent className="p-4 pt-4">
+          <CardContent className="p-2 pt-2 sm:p-3 sm:pt-3 md:p-4 md:pt-4">
             {/* Product name with line clamp */}
             <h3
               className={`
-                line-clamp-2 text-base font-medium transition-colors
+                line-clamp-2 text-xs font-medium leading-tight transition-colors
+                sm:text-sm md:text-base
                 group-hover:text-primary
               `}
             >
@@ -186,13 +193,13 @@ export function ProductCard({
 
             {variant === "default" && (
               <>
-                <div className="mt-1.5">{renderStars()}</div>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <span className="font-medium text-foreground">
+                <div className="mt-1 hidden sm:block">{renderStars()}</div>
+                <div className="mt-1 flex flex-col gap-0 sm:mt-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 md:mt-2 md:gap-1.5">
+                  <span className="text-xs font-semibold text-foreground sm:text-sm md:text-base">
                     {product.price.toFixed(2)} EGP
                   </span>
                   {product.originalPrice ? (
-                    <span className="text-sm text-muted-foreground line-through">
+                    <span className="text-[10px] text-muted-foreground line-through sm:text-xs md:text-sm">
                       {product.originalPrice.toFixed(2)} EGP
                     </span>
                   ) : null}
@@ -202,39 +209,40 @@ export function ProductCard({
           </CardContent>
 
           {variant === "default" && (
-            <CardFooter className="p-4 pt-0">
+            <CardFooter className="p-2 pt-0 sm:p-3 sm:pt-0 md:p-4 md:pt-0">
               <Button
                 className={cn(
-                  "w-full gap-2 transition-all",
+                  "w-full gap-1 text-[10px] h-7 transition-all sm:gap-1.5 sm:text-xs sm:h-8 md:gap-2 md:text-sm md:h-9",
                   isAddingToCart && "opacity-70"
                 )}
                 disabled={isAddingToCart}
                 onClick={handleAddToCart}
+                size="sm"
               >
                 {isAddingToCart ? (
                   <div
                     className={`
-                      h-4 w-4 animate-spin rounded-full border-2
+                      h-3 w-3 animate-spin rounded-full border-2 sm:h-4 sm:w-4
                       border-background border-t-transparent
                     `}
                   />
                 ) : (
-                  <ShoppingCart className="h-4 w-4" />
+                  <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
                 )}
-                Add to Cart
+                <span className="hidden xs:inline">Add to </span>Cart
               </Button>
             </CardFooter>
           )}
 
           {variant === "compact" && (
-            <CardFooter className="p-4 pt-0">
+            <CardFooter className="p-3 pt-0 sm:p-4 sm:pt-0">
               <div className="flex w-full items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-medium text-foreground">
+                <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
+                  <span className="text-sm font-medium text-foreground sm:text-base">
                     {product.price.toFixed(2)} EGP
                   </span>
                   {product.originalPrice ? (
-                    <span className="text-sm text-muted-foreground line-through">
+                    <span className="text-xs text-muted-foreground line-through sm:text-sm">
                       {product.originalPrice.toFixed(2)} EGP
                     </span>
                   ) : null}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { Heart, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,7 +8,9 @@ import { useState } from "react";
 
 import { SEO_CONFIG } from "~/app";
 import { cn } from "~/lib/cn";
+import { useWishlist } from "~/lib/hooks/use-wishlist";
 import { Cart } from "~/ui/components/cart";
+import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
 
 import { ThemeToggle } from "../theme-toggle";
@@ -21,6 +23,7 @@ interface HeaderProps {
 export function Header({ showAuth = true }: HeaderProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { itemCount: wishlistCount } = useWishlist();
 
   const navigation = [
     { href: "/", name: "Home" },
@@ -105,6 +108,20 @@ export function Header({ showAuth = true }: HeaderProps) {
               )}
             </Button>
 
+            <Link href="/wishlist">
+              <Button size="icon" variant="ghost" className="relative">
+                <Heart className="h-5 w-5" />
+                {wishlistCount > 0 && (
+                  <Badge
+                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-[10px]"
+                    variant="default"
+                  >
+                    {wishlistCount}
+                  </Badge>
+                )}
+                <span className="sr-only">Wishlist</span>
+              </Button>
+            </Link>
             <Cart />
             <ThemeToggle />
 

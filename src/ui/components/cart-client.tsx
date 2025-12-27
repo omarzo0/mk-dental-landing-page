@@ -1,13 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Minus, Plus, ShoppingCart, X } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingCart, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
+import { toast } from "sonner";
 
 import { cn } from "~/lib/cn";
 import { useMediaQuery } from "~/lib/hooks/use-media-query";
+import { useWishlist } from "~/lib/hooks/use-wishlist";
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
 import {
@@ -45,6 +47,7 @@ export function CartClient({ className, mockCart }: CartProps) {
   const [cartItems, setCartItems] = React.useState<CartItem[]>(mockCart);
   const [isMounted, setIsMounted] = React.useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const { addItem: addToWishlist } = useWishlist();
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -67,6 +70,18 @@ export function CartClient({ className, mockCart }: CartProps) {
 
   const handleRemoveItem = (id: string) => {
     setCartItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleMoveToWishlist = (item: CartItem) => {
+    addToWishlist({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      category: item.category,
+    });
+    handleRemoveItem(item.id);
+    toast.success(`${item.name} moved to wishlist`);
   };
 
   const handleClearCart = () => {
@@ -187,18 +202,33 @@ export function CartClient({ className, mockCart }: CartProps) {
                           >
                             {item.name}
                           </Link>
-                          <button
-                            className={`
-                              -mt-1 -mr-1 ml-2 rounded-full p-1
-                              text-muted-foreground transition-colors
-                              hover:bg-muted hover:text-destructive
-                            `}
-                            onClick={() => handleRemoveItem(item.id)}
-                            type="button"
-                          >
-                            <X className="h-4 w-4" />
-                            <span className="sr-only">Remove item</span>
-                          </button>
+                          <div className="flex items-center gap-1 ml-2">
+                            <button
+                              className={`
+                                -mt-1 rounded-full p-1
+                                text-muted-foreground transition-colors
+                                hover:bg-muted hover:text-primary
+                              `}
+                              onClick={() => handleMoveToWishlist(item)}
+                              type="button"
+                              title="Move to wishlist"
+                            >
+                              <Heart className="h-4 w-4" />
+                              <span className="sr-only">Move to wishlist</span>
+                            </button>
+                            <button
+                              className={`
+                                -mt-1 rounded-full p-1
+                                text-muted-foreground transition-colors
+                                hover:bg-muted hover:text-destructive
+                              `}
+                              onClick={() => handleRemoveItem(item.id)}
+                              type="button"
+                            >
+                              <X className="h-4 w-4" />
+                              <span className="sr-only">Remove item</span>
+                            </button>
+                          </div>
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {item.category}

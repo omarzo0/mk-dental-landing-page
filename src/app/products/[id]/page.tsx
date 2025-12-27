@@ -1,12 +1,18 @@
 "use client";
 
-import { Minus, Plus, ShoppingCart, Star } from "lucide-react";
-import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 
 import { useCart } from "~/lib/hooks/use-cart";
+import {
+  AddToCartSection,
+  ProductDetailsTabs,
+  ProductImage,
+  ProductInfo,
+} from "~/ui/components/product-details";
 import { Button } from "~/ui/primitives/button";
 import { Separator } from "~/ui/primitives/separator";
 
@@ -33,20 +39,12 @@ interface Product {
 /*                         Helpers (shared, memo-safe)                        */
 /* -------------------------------------------------------------------------- */
 
-const CURRENCY_FORMATTER = new Intl.NumberFormat("en-EG", {
-  currency: "EGP",
-  style: "currency",
-});
-
 /** `feature -> feature` ➜ `feature-feature` (for React keys) */
 const slugify = (str: string) =>
   str
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^\w-]+/g, "");
-
-/** Build an integer array `[0,…,length-1]` once */
-const range = (length: number) => Array.from({ length }, (_, i) => i);
 
 /* -------------------------------------------------------------------------- */
 /*                        Static product data (demo only)                     */
@@ -288,7 +286,6 @@ export default function ProductDetailPage() {
   const { addItem } = useCart();
 
   /* ----------------------------- Local state ----------------------------- */
-  const [quantity, setQuantity] = React.useState(1);
   const [isAdding, setIsAdding] = React.useState(false);
 
   /* ------------------------ Derive product object ------------------------ */
@@ -303,43 +300,36 @@ export default function ProductDetailPage() {
   }, [product]);
 
   /* ------------------------------ Handlers ------------------------------- */
-  const handleQuantityChange = React.useCallback((newQty: number) => {
-    setQuantity((prev) => (newQty >= 1 ? newQty : prev));
-  }, []);
+  const handleAddToCart = React.useCallback(
+    async (quantity: number) => {
+      if (!product) return;
 
-  const handleAddToCart = React.useCallback(async () => {
-    if (!product) return;
-
-    setIsAdding(true);
-    addItem(
-      {
-        category: product.category,
-        id: product.id,
-        image: product.image,
-        name: product.name,
-        price: product.price,
-      },
-      quantity,
-    );
-    setQuantity(1);
-    toast.success(`${product.name} added to cart`);
-    await new Promise((r) => setTimeout(r, 400)); // fake latency
-    setIsAdding(false);
-  }, [addItem, product, quantity]);
+      setIsAdding(true);
+      addItem(
+        {
+          category: product.category,
+          id: product.id,
+          image: product.image,
+          name: product.name,
+          price: product.price,
+        },
+        quantity,
+      );
+      toast.success(`${product.name} added to cart`);
+      await new Promise((r) => setTimeout(r, 400)); // fake latency
+      setIsAdding(false);
+    },
+    [addItem, product],
+  );
 
   /* -------------------------- Conditional UI ---------------------------- */
   if (!product) {
     return (
       <div className="flex min-h-screen flex-col">
         <main className="flex-1 py-10">
-          <div
-            className={`
-              container px-4
-              md:px-6
-            `}
-          >
+          <div className="container px-4 md:px-6">
             <h1 className="text-3xl font-bold">Product Not Found</h1>
-            <p className="mt-4">
+            <p className="mt-4 text-muted-foreground">
               The product you&apos;re looking for doesn&apos;t exist.
             </p>
             <Button className="mt-6" onClick={() => router.push("/products")}>
@@ -354,232 +344,55 @@ export default function ProductDetailPage() {
   /* ------------------------------ Markup --------------------------------- */
   return (
     <div className="flex min-h-screen flex-col">
-      <main className="flex-1 py-10">
-        <div
-          className={`
-            container px-4
-            md:px-6
-          `}
-        >
+      <main className="flex-1 py-6 sm:py-10">
+        <div className="container px-4 sm:px-6">
           {/* Back link */}
-          <Button
-            aria-label="Back to products"
-            className="mb-6"
-            onClick={() => router.push("/products")}
-            variant="ghost"
+          <Link
+            href="/products"
+            className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            ← Back to Products
-          </Button>
+            <ArrowLeft className="h-4 w-4" />
+            Back to Products
+          </Link>
 
           {/* Main grid */}
-          <div
-            className={`
-              grid grid-cols-1 gap-8
-              md:grid-cols-2
-            `}
-          >
-            {/* ------------------------ Product image ------------------------ */}
-            <div
-              className={`
-                relative aspect-square overflow-hidden rounded-lg bg-muted
-              `}
-            >
-              <Image
-                alt={product.name}
-                className="object-cover"
-                fill
-                priority
-                src={product.image}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
+            {/* Product image */}
+            <ProductImage
+              alt={product.name}
+              discountPercentage={discountPercentage}
+              inStock={product.inStock}
+              src={product.image}
+            />
+
+            {/* Product info & add to cart */}
+            <div className="flex flex-col gap-6">
+              <ProductInfo
+                category={product.category}
+                description={product.description}
+                inStock={product.inStock}
+                name={product.name}
+                originalPrice={product.originalPrice}
+                price={product.price}
+                rating={product.rating}
               />
-              {discountPercentage > 0 && (
-                <div
-                  className={`
-                    absolute top-2 left-2 rounded-full bg-red-500 px-2 py-1
-                    text-xs font-bold text-white
-                  `}
-                >
-                  -{discountPercentage}%
-                </div>
-              )}
-            </div>
 
-            {/* ---------------------- Product info -------------------------- */}
-            <div className="flex flex-col">
-              {/* Title & rating */}
-              <div className="mb-4 sm:mb-6">
-                <h1 className="text-2xl font-bold sm:text-3xl">{product.name}</h1>
-
-                <div className="mt-2 flex items-center gap-2">
-                  {/* Stars */}
-                  <div
-                    aria-label={`Rating ${product.rating} out of 5`}
-                    className="flex items-center"
-                  >
-                    {range(5).map((i) => (
-                      <Star
-                        className={`
-                          h-5 w-5
-                          ${
-                            i < Math.floor(product.rating)
-                              ? "fill-primary text-primary"
-                              : i < product.rating
-                                ? "fill-primary/50 text-primary"
-                                : "text-muted-foreground"
-                          }
-                        `}
-                        key={`star-${i}`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    ({product.rating.toFixed(1)})
-                  </span>
-                </div>
-              </div>
-
-              {/* Category & prices */}
-              <div className="mb-4 sm:mb-6">
-                <p className="text-base font-medium text-muted-foreground sm:text-lg">
-                  {product.category}
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-2xl font-bold sm:text-3xl">
-                    {CURRENCY_FORMATTER.format(product.price)}
-                  </span>
-                  {product.originalPrice && (
-                    <span className="text-lg text-muted-foreground line-through sm:text-xl">
-                      {CURRENCY_FORMATTER.format(product.originalPrice)}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Description */}
-              <p className="mb-4 text-sm text-muted-foreground sm:mb-6 sm:text-base">
-                {product.description}
-              </p>
-
-              {/* Stock */}
-              <div aria-atomic="true" aria-live="polite" className="mb-4 sm:mb-6">
-                {product.inStock ? (
-                  <p className="text-sm font-medium text-green-600">In Stock</p>
-                ) : (
-                  <p className="text-sm font-medium text-red-500">
-                    Out of Stock
-                  </p>
-                )}
-              </div>
-
-              {/* Quantity selector & Add to cart */}
-              <div
-                className={`
-                  mb-4 flex flex-col gap-3
-                  sm:mb-6 sm:flex-row sm:items-center sm:gap-4
-                `}
-              >
-                {/* Quantity */}
-                <div className="flex items-center">
-                  <Button
-                    aria-label="Decrease quantity"
-                    disabled={quantity <= 1}
-                    onClick={() => handleQuantityChange(quantity - 1)}
-                    size="icon"
-                    variant="outline"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-
-                  <span className="w-12 text-center select-none">
-                    {quantity}
-                  </span>
-
-                  <Button
-                    aria-label="Increase quantity"
-                    onClick={() => handleQuantityChange(quantity + 1)}
-                    size="icon"
-                    variant="outline"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Add to cart */}
-                <Button
-                  className="flex-1"
-                  disabled={!product.inStock || isAdding}
-                  onClick={handleAddToCart}
-                >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  {isAdding ? "Adding…" : "Add to Cart"}
-                </Button>
-              </div>
+              <AddToCartSection
+                disabled={!product.inStock}
+                isAdding={isAdding}
+                onAddToCart={handleAddToCart}
+              />
             </div>
           </div>
 
-          <Separator className="my-8" />
+          <Separator className="my-8 sm:my-12" />
 
-          {/* ---------------------- Features & Specs ------------------------ */}
-          <div
-            className={`
-              grid grid-cols-1 gap-6
-              sm:gap-8
-              md:grid-cols-2
-            `}
-          >
-            {/* Features */}
-            <section>
-              <h2 className="mb-3 text-xl font-bold sm:mb-4 sm:text-2xl">Features</h2>
-              <ul className="space-y-2">
-                {product.features.map((feature) => (
-                  <li
-                    className="flex items-start text-sm sm:text-base"
-                    key={`feature-${product.id}-${slugify(feature)}`}
-                  >
-                    <span className="mt-1.5 mr-2 h-1.5 w-1.5 rounded-full bg-primary sm:mt-2 sm:h-2 sm:w-2" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Specifications */}
-            <section>
-              <h2 className="mb-3 text-xl font-bold sm:mb-4 sm:text-2xl">Specifications</h2>
-              <div className="space-y-2">
-                {Object.entries(product.specs).map(([key, value]) => (
-                  <div
-                    className="flex justify-between gap-4 border-b pb-2 text-xs sm:text-sm"
-                    key={key}
-                  >
-                    <span className="font-medium capitalize">
-                      {key.replace(/([A-Z])/g, " $1").trim()}
-                    </span>
-                    <span className="text-right text-muted-foreground">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          <Separator className="my-8" />
-
-          {/* ---------------------- Package Contents ------------------------ */}
-          <section>
-            <h2 className="mb-3 text-xl font-bold sm:mb-4 sm:text-2xl">Package Contents</h2>
-            <div className="rounded-lg border bg-muted/30 p-4 sm:p-6">
-              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {product.packageContents.map((item) => (
-                  <li
-                    className="flex items-center text-sm sm:text-base"
-                    key={`package-${product.id}-${slugify(item)}`}
-                  >
-                    <span className="mr-2 text-primary">✓</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
+          {/* Features, Specs & Package Contents */}
+          <ProductDetailsTabs
+            features={product.features}
+            packageContents={product.packageContents}
+            specs={product.specs}
+          />
         </div>
       </main>
     </div>

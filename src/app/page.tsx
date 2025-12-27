@@ -1,4 +1,4 @@
-import { ArrowRight, Clock, ShoppingBag, Star, Truck } from "lucide-react";
+import { ArrowRight, Clock, Package, ShoppingBag, Star, Truck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "~/ui/primitives/card";
 
-import { categories, featuredProductsHomepage, testimonials } from "./mocks";
+import { categories, featuredProductsHomepage, packages, testimonials } from "./mocks";
 
 const featuresWhyChooseUs = [
   {
@@ -307,6 +307,165 @@ export default function HomePage() {
               <Link href="/products">
                 <Button className="group h-12 px-8" size="lg" variant="outline">
                   View All Products
+                  <ArrowRight
+                    className={`
+                      ml-2 h-4 w-4 transition-transform duration-300
+                      group-hover:translate-x-1
+                    `}
+                  />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Special Packages Section */}
+        <section
+          className={`
+            py-12
+            md:py-16
+          `}
+        >
+          <div
+            className={`
+              container mx-auto max-w-7xl px-4
+              sm:px-6
+              lg:px-8
+            `}
+          >
+            <div className="mb-8 flex flex-col items-center text-center">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <Package className="h-6 w-6 text-primary" />
+              </div>
+              <h2
+                className={`
+                  font-display text-3xl leading-tight font-bold tracking-tight
+                  md:text-4xl
+                `}
+              >
+                Special Packages
+              </h2>
+              <div className="mt-2 h-1 w-12 rounded-full bg-primary" />
+              <p className="mt-4 max-w-2xl text-center text-muted-foreground">
+                Save more with our curated bundles - perfect for clinics and dental professionals
+              </p>
+            </div>
+            <div
+              className={`
+                mx-auto grid max-w-5xl grid-cols-1 gap-6
+                md:grid-cols-2
+                lg:grid-cols-3
+              `}
+            >
+              {packages.map((pkg) => (
+                <Link
+                  href={`/products?package=${pkg.id}`}
+                  key={pkg.id}
+                  className="group"
+                >
+                  <Card
+                    className={`
+                      relative h-full overflow-hidden rounded-2xl border
+                      bg-card py-0 shadow transition-all duration-300
+                      hover:shadow-xl hover:-translate-y-1
+                    `}
+                  >
+                    {/* Badge */}
+                    {pkg.badge && (
+                      <div
+                        className={`
+                          absolute top-3 right-3 z-20 rounded-full bg-primary
+                          px-3 py-1 text-xs font-semibold text-primary-foreground
+                        `}
+                      >
+                        {pkg.badge}
+                      </div>
+                    )}
+
+                    {/* Image */}
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <div
+                        className={`
+                          absolute inset-0 z-10 bg-gradient-to-t
+                          from-background via-background/20 to-transparent
+                        `}
+                      />
+                      <Image
+                        alt={pkg.name}
+                        className={`
+                          object-cover transition duration-300
+                          group-hover:scale-105
+                        `}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        src={pkg.image}
+                      />
+                    </div>
+
+                    {/* Content */}
+                    <CardHeader className="relative z-20 -mt-8 pb-2">
+                      <CardTitle className="text-xl">{pkg.name}</CardTitle>
+                      <CardDescription className="line-clamp-2">
+                        {pkg.description}
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="pb-4">
+                      {/* Items included */}
+                      <div className="mb-3 flex flex-wrap gap-1">
+                        {pkg.items.slice(0, 3).map((item) => (
+                          <span
+                            key={item}
+                            className={`
+                              rounded-full bg-muted px-2 py-0.5 text-xs
+                              text-muted-foreground
+                            `}
+                          >
+                            {item}
+                          </span>
+                        ))}
+                        {pkg.items.length > 3 && (
+                          <span
+                            className={`
+                              rounded-full bg-muted px-2 py-0.5 text-xs
+                              text-muted-foreground
+                            `}
+                          >
+                            +{pkg.items.length - 3} more
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Price */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-foreground">
+                              {pkg.price.toFixed(2)} EGP
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground line-through">
+                              {pkg.originalPrice.toFixed(2)} EGP
+                            </span>
+                            <span className="text-sm font-medium text-green-600">
+                              Save {pkg.savings} EGP
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right text-sm text-muted-foreground">
+                          {pkg.itemCount} items
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+            <div className="mt-10 flex justify-center">
+              <Link href="/products?view=packages">
+                <Button className="group h-12 px-8" size="lg" variant="outline">
+                  View All Packages
                   <ArrowRight
                     className={`
                       ml-2 h-4 w-4 transition-transform duration-300

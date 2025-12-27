@@ -31,14 +31,7 @@ export function Footer({ className }: { className?: string }) {
                 height={36}
                 className="rounded-lg"
               />
-              <span
-                className={`
-                  bg-gradient-to-r from-primary to-secondary bg-clip-text
-                  text-xl font-bold tracking-tight text-transparent
-                `}
-              >
-                {SEO_CONFIG.name}
-              </span>
+            
             </Link>
             <p className="text-sm text-muted-foreground">
               Your trusted source for professional dental instruments and

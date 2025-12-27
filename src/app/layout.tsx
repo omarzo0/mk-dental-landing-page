@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { SEO_CONFIG } from "~/app";
 import { CartProvider } from "~/lib/hooks/use-cart";
+import { WishlistProvider } from "~/lib/hooks/use-wishlist";
 import "~/css/globals.css";
 import { Footer } from "~/ui/components/footer";
 import { Header } from "~/ui/components/header/header";
@@ -62,10 +63,12 @@ export default function RootLayout({
           enableSystem
         >
           <CartProvider>
-            <Header showAuth={true} />
-            <main className={`flex min-h-screen flex-col`}>{children}</main>
-            <Footer />
-            <Toaster />
+            <WishlistProvider>
+              <Header showAuth={true} />
+              <main className={`flex min-h-screen flex-col`}>{children}</main>
+              <Footer />
+              <Toaster />
+            </WishlistProvider>
           </CartProvider>
         </ThemeProvider>
         <SpeedInsights />

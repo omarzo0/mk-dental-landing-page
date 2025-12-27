@@ -122,3 +122,42 @@ export const testimonials = [
   },
 ];
 
+// Packages / Special Offers
+export const packages = [
+  {
+    id: "pkg-1",
+    name: "Starter Dental Kit",
+    description: "Everything you need to start your dental practice. Includes essential diagnostic and basic surgical instruments.",
+    image: "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=800&auto=format&fit=crop&q=60",
+    originalPrice: 599.99,
+    price: 449.99,
+    savings: 150,
+    itemCount: 12,
+    badge: "Best Seller",
+    items: ["Dental Mirror Set", "Explorer Set", "Probes", "Tweezers", "Scalers"],
+  },
+  {
+    id: "pkg-2",
+    name: "Professional Surgical Bundle",
+    description: "Complete surgical instrument set for extractions and minor oral surgeries. Hospital-grade quality.",
+    image: "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=800&auto=format&fit=crop&q=60",
+    originalPrice: 899.99,
+    price: 699.99,
+    savings: 200,
+    itemCount: 18,
+    badge: "Premium",
+    items: ["Extraction Forceps", "Elevators", "Surgical Scissors", "Needle Holders", "Suture Kit"],
+  },
+  {
+    id: "pkg-3",
+    name: "Hygiene Pro Package",
+    description: "Professional hygiene equipment bundle for cleaning and preventive care procedures.",
+    image: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=800&auto=format&fit=crop&q=60",
+    originalPrice: 1299.99,
+    price: 999.99,
+    savings: 300,
+    itemCount: 8,
+    badge: "Save 23%",
+    items: ["Ultrasonic Scaler", "Polishing Handpiece", "Curettes Set", "Air Polisher"],
+  },
+];
