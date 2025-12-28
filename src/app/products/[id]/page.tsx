@@ -7,12 +7,16 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { useCart } from "~/lib/hooks/use-cart";
+import { useRecentlyViewed } from "~/lib/hooks/use-recently-viewed";
+import { useWishlist } from "~/lib/hooks/use-wishlist";
+import { ProductCard } from "~/ui/components/product-card";
 import {
   AddToCartSection,
   ProductDetailsTabs,
   ProductImage,
   ProductInfo,
 } from "~/ui/components/product-details";
+import { ProductReviews } from "~/ui/components/product-reviews";
 import { Button } from "~/ui/primitives/button";
 import { Separator } from "~/ui/primitives/separator";
 
@@ -285,11 +289,45 @@ export default function ProductDetailPage() {
   /* ----------------------------- Cart hook ------------------------------- */
   const { addItem } = useCart();
 
+  /* ----------------------------- Wishlist hook --------------------------- */
+  const { addItem: addToWishlist, isInWishlist } = useWishlist();
+
+  /* ----------------------------- Recently viewed hook -------------------- */
+  const { addProduct: addToRecentlyViewed, products: recentlyViewedProducts } = useRecentlyViewed();
+
   /* ----------------------------- Local state ----------------------------- */
   const [isAdding, setIsAdding] = React.useState(false);
 
   /* ------------------------ Derive product object ------------------------ */
   const product = React.useMemo(() => products.find((p) => p.id === id), [id]);
+
+  /* ----------------------- Track recently viewed ------------------------- */
+  React.useEffect(() => {
+    if (product) {
+      addToRecentlyViewed({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: product.category,
+      });
+    }
+  }, [product, addToRecentlyViewed]);
+
+  /* ----------------------- Related products ------------------------------ */
+  const relatedProducts = React.useMemo(() => {
+    if (!product) return [];
+    return products
+      .filter((p) => p.category === product.category && p.id !== product.id)
+      .slice(0, 4);
+  }, [product]);
+
+  /* ----------------------- Recently viewed (exclude current) ------------- */
+  const displayRecentlyViewed = React.useMemo(() => {
+    return recentlyViewedProducts
+      .filter((p) => p.id !== id)
+      .slice(0, 4);
+  }, [recentlyViewedProducts, id]);
 
   /* ----------------------- Derived/computed values ----------------------- */
   const discountPercentage = React.useMemo(() => {
@@ -321,6 +359,48 @@ export default function ProductDetailPage() {
     },
     [addItem, product],
   );
+
+  const handleAddToWishlist = React.useCallback(() => {
+    if (!product) return;
+    addToWishlist({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      category: product.category,
+      inStock: product.inStock,
+      originalPrice: product.originalPrice,
+    });
+    toast.success(isInWishlist(product.id) ? "Removed from wishlist" : "Added to wishlist");
+  }, [product, addToWishlist, isInWishlist]);
+
+  const handleRelatedAddToCart = React.useCallback((productId: string) => {
+    const p = products.find((prod) => prod.id === productId);
+    if (!p) return;
+    addItem({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      image: p.image,
+      category: p.category,
+    }, 1);
+    toast.success(`${p.name} added to cart`);
+  }, [addItem]);
+
+  const handleRelatedAddToWishlist = React.useCallback((productId: string) => {
+    const p = products.find((prod) => prod.id === productId);
+    if (!p) return;
+    addToWishlist({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      image: p.image,
+      category: p.category,
+      inStock: p.inStock,
+      originalPrice: p.originalPrice,
+    });
+    toast.success(isInWishlist(p.id) ? "Removed from wishlist" : "Added to wishlist");
+  }, [addToWishlist, isInWishlist]);
 
   /* -------------------------- Conditional UI ---------------------------- */
   if (!product) {
@@ -393,6 +473,76 @@ export default function ProductDetailPage() {
             packageContents={product.packageContents}
             specs={product.specs}
           />
+
+          <Separator className="my-8 sm:my-12" />
+
+          {/* Product Reviews */}
+          <section className="mt-8">
+            <ProductReviews productId={product.id} productName={product.name} />
+          </section>
+
+          {/* Related Products */}
+          {relatedProducts.length > 0 && (
+            <>
+              <Separator className="my-8 sm:my-12" />
+              <section>
+                <h2 className="text-2xl font-bold mb-6">Related Products</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {relatedProducts.map((p) => (
+                    <ProductCard
+                      key={p.id}
+                      product={{
+                        id: p.id,
+                        name: p.name,
+                        price: p.price,
+                        originalPrice: p.originalPrice,
+                        image: p.image,
+                        category: p.category,
+                        rating: p.rating,
+                        inStock: p.inStock,
+                      }}
+                      onAddToCart={handleRelatedAddToCart}
+                      onAddToWishlist={handleRelatedAddToWishlist}
+                      isInWishlist={isInWishlist(p.id)}
+                    />
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* Recently Viewed */}
+          {displayRecentlyViewed.length > 0 && (
+            <>
+              <Separator className="my-8 sm:my-12" />
+              <section>
+                <h2 className="text-2xl font-bold mb-6">Recently Viewed</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {displayRecentlyViewed.map((p) => {
+                    const fullProduct = products.find((prod) => prod.id === p.id);
+                    return (
+                      <ProductCard
+                        key={p.id}
+                        product={{
+                          id: p.id,
+                          name: p.name,
+                          price: p.price,
+                          image: p.image,
+                          category: p.category,
+                          inStock: fullProduct?.inStock ?? true,
+                          rating: fullProduct?.rating,
+                          originalPrice: fullProduct?.originalPrice,
+                        }}
+                        onAddToCart={handleRelatedAddToCart}
+                        onAddToWishlist={handleRelatedAddToWishlist}
+                        isInWishlist={isInWishlist(p.id)}
+                      />
+                    );
+                  })}
+                </div>
+              </section>
+            </>
+          )}
         </div>
       </main>
     </div>

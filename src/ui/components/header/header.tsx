@@ -11,6 +11,7 @@ import { cn } from "~/lib/cn";
 import { useAuth } from "~/lib/hooks/use-auth";
 import { useWishlist } from "~/lib/hooks/use-wishlist";
 import { Cart } from "~/ui/components/cart";
+import { SearchBar } from "~/ui/components/search-bar";
 import { Avatar, AvatarFallback } from "~/ui/primitives/avatar";
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
@@ -117,6 +118,11 @@ export function Header({ showAuth = true }: HeaderProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Search bar - desktop */}
+            <div className="hidden md:block">
+              <SearchBar />
+            </div>
+            
             {/* Mobile menu button */}
             <Button
               className="md:hidden"
@@ -234,6 +240,11 @@ export function Header({ showAuth = true }: HeaderProps) {
       {mobileMenuOpen && (
         <div className="md:hidden">
           <div className="space-y-1 border-b px-4 py-3">
+            {/* Mobile search bar */}
+            <div className="mb-3">
+              <SearchBar className="w-full xl:w-full" />
+            </div>
+            
             {navigation.map((item) => {
               const isActive =
                 pathname === item.href ||

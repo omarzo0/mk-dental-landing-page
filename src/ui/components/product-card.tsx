@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, ShoppingCart, Star } from "lucide-react";
+import { Eye, GitCompare, Heart, ShoppingCart, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
@@ -16,6 +16,10 @@ type ProductCardProps = Omit<
 > & {
   onAddToCart?: (productId: string) => void;
   onAddToWishlist?: (productId: string) => void;
+  onQuickView?: (productId: string) => void;
+  onAddToCompare?: (productId: string) => void;
+  isInWishlist?: boolean;
+  isInCompare?: boolean;
   product: {
     category: string;
     id: string;
@@ -25,27 +29,38 @@ type ProductCardProps = Omit<
     originalPrice?: number;
     price: number;
     rating?: number;
+    brand?: string;
+    reviews?: number;
   };
   variant?: "compact" | "default";
+  viewMode?: "grid" | "list";
 };
 
 export function ProductCard({
   className,
   onAddToCart,
   onAddToWishlist,
+  onQuickView,
+  onAddToCompare,
+  isInWishlist: isInWishlistProp = false,
+  isInCompare = false,
   product,
   variant = "default",
+  viewMode = "grid",
   ...props
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = React.useState(false);
   const [isAddingToCart, setIsAddingToCart] = React.useState(false);
-  const [isInWishlist, setIsInWishlist] = React.useState(false);
+  const [isInWishlist, setIsInWishlist] = React.useState(isInWishlistProp);
+
+  React.useEffect(() => {
+    setIsInWishlist(isInWishlistProp);
+  }, [isInWishlistProp]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     if (onAddToCart) {
       setIsAddingToCart(true);
-      // Simulate API call
       setTimeout(() => {
         onAddToCart(product.id);
         setIsAddingToCart(false);
@@ -58,6 +73,20 @@ export function ProductCard({
     if (onAddToWishlist) {
       setIsInWishlist(!isInWishlist);
       onAddToWishlist(product.id);
+    }
+  };
+
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onQuickView) {
+      onQuickView(product.id);
+    }
+  };
+
+  const handleAddToCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onAddToCompare) {
+      onAddToCompare(product.id);
     }
   };
 
@@ -90,11 +119,95 @@ export function ProductCard({
         {rating > 0 && (
           <span className="ml-1 text-[10px] text-muted-foreground sm:text-xs">
             {rating.toFixed(1)}
+            {product.reviews && ` (${product.reviews})`}
           </span>
         )}
       </div>
     );
   };
+
+  // List view layout
+  if (viewMode === "list") {
+    return (
+      <div className={cn("group", className)} {...props}>
+        <Card
+          className="relative overflow-hidden rounded-lg transition-all duration-200 hover:shadow-md"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <div className="flex gap-4 p-4">
+            {/* Image */}
+            <Link href={`/products/${product.id}`} className="relative h-32 w-32 flex-shrink-0">
+              <Image
+                alt={product.name}
+                className="object-cover rounded-md"
+                fill
+                sizes="128px"
+                src={product.image}
+              />
+              {discount > 0 && (
+                <Badge className="absolute top-1 left-1 bg-destructive text-destructive-foreground text-xs">
+                  -{discount}%
+                </Badge>
+              )}
+            </Link>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <Badge variant="outline" className="mb-2 text-xs">
+                    {product.category}
+                  </Badge>
+                  <Link href={`/products/${product.id}`}>
+                    <h3 className="font-medium hover:text-primary line-clamp-2">
+                      {product.name}
+                    </h3>
+                  </Link>
+                  {product.brand && (
+                    <p className="text-sm text-muted-foreground mt-1">{product.brand}</p>
+                  )}
+                  <div className="mt-2">{renderStars()}</div>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <span className="block text-sm text-muted-foreground line-through">
+                      ${product.originalPrice.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-4">
+                <Button
+                  size="sm"
+                  onClick={handleAddToCart}
+                  disabled={!product.inStock || isAddingToCart}
+                >
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  {isAddingToCart ? "Adding..." : product.inStock ? "Add to Cart" : "Out of Stock"}
+                </Button>
+                <Button variant="outline" size="icon" onClick={handleAddToWishlist}>
+                  <Heart className={cn("h-4 w-4", isInWishlist && "fill-destructive text-destructive")} />
+                </Button>
+                {onQuickView && (
+                  <Button variant="outline" size="icon" onClick={handleQuickView}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
+                {onAddToCompare && (
+                  <Button variant="outline" size="icon" onClick={handleAddToCompare} disabled={isInCompare}>
+                    <GitCompare className={cn("h-4 w-4", isInCompare && "text-primary")} />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("group", className)} {...props}>
@@ -125,6 +238,13 @@ export function ProductCard({
               />
             )}
 
+            {/* Stock badge */}
+            {product.inStock === false && (
+              <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                <Badge variant="secondary" className="text-sm">Out of Stock</Badge>
+              </div>
+            )}
+
             {/* Category badge */}
             <Badge
               className={`
@@ -151,32 +271,49 @@ export function ProductCard({
               </Badge>
             )}
 
-            {/* Wishlist button */}
-            <Button
+            {/* Action buttons */}
+            <div
               className={cn(
-                `
-                  absolute right-1 bottom-1 z-10 h-6 w-6 rounded-full bg-background/80
-                  backdrop-blur-sm transition-opacity duration-300
-                  sm:right-1.5 sm:bottom-1.5 sm:h-7 sm:w-7
-                  md:right-2 md:bottom-2 md:h-9 md:w-9
-                `,
-                !isHovered && !isInWishlist && "opacity-0 group-hover:opacity-100"
+                "absolute bottom-2 left-2 right-2 flex justify-center gap-2 transition-all duration-300",
+                isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
               )}
-              onClick={handleAddToWishlist}
-              size="icon"
-              type="button"
-              variant="outline"
             >
-              <Heart
+              {onQuickView && (
+                <Button
+                  className="h-8 w-8 rounded-full bg-background/90 backdrop-blur-sm"
+                  onClick={handleQuickView}
+                  size="icon"
+                  variant="outline"
+                >
+                  <Eye className="h-4 w-4" />
+                  <span className="sr-only">Quick view</span>
+                </Button>
+              )}
+              {onAddToCompare && (
+                <Button
+                  className="h-8 w-8 rounded-full bg-background/90 backdrop-blur-sm"
+                  onClick={handleAddToCompare}
+                  size="icon"
+                  variant="outline"
+                  disabled={isInCompare}
+                >
+                  <GitCompare className={cn("h-4 w-4", isInCompare && "text-primary")} />
+                  <span className="sr-only">Add to compare</span>
+                </Button>
+              )}
+              <Button
                 className={cn(
-                  "h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4",
-                  isInWishlist
-                    ? "fill-destructive text-destructive"
-                    : "text-muted-foreground"
+                  "h-8 w-8 rounded-full bg-background/90 backdrop-blur-sm",
+                  isInWishlist && "text-destructive"
                 )}
-              />
-              <span className="sr-only">Add to wishlist</span>
-            </Button>
+                onClick={handleAddToWishlist}
+                size="icon"
+                variant="outline"
+              >
+                <Heart className={cn("h-4 w-4", isInWishlist && "fill-destructive text-destructive")} />
+                <span className="sr-only">Add to wishlist</span>
+              </Button>
+            </div>
           </div>
 
           <CardContent className="p-2 pt-2 sm:p-3 sm:pt-3 md:p-4 md:pt-4">
@@ -196,7 +333,7 @@ export function ProductCard({
                 <div className="mt-1 hidden sm:block">{renderStars()}</div>
                 <div className="mt-1 flex flex-col gap-0 sm:mt-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 md:mt-2 md:gap-1.5">
                   <span className="text-xs font-semibold text-foreground sm:text-sm md:text-base">
-                    {product.price.toFixed(2)} EGP
+                    ${product.price.toFixed(2)}
                   </span>
                   {product.originalPrice ? (
                     <span className="text-[10px] text-muted-foreground line-through sm:text-xs md:text-sm">

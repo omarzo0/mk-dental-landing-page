@@ -6,6 +6,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SEO_CONFIG } from "~/app";
 import { AuthProvider } from "~/lib/hooks/use-auth";
 import { CartProvider } from "~/lib/hooks/use-cart";
+import { CompareProvider } from "~/lib/hooks/use-compare";
+import { RecentlyViewedProvider } from "~/lib/hooks/use-recently-viewed";
 import { WishlistProvider } from "~/lib/hooks/use-wishlist";
 import "~/css/globals.css";
 import { LayoutWrapper } from "~/ui/components/layout-wrapper";
@@ -65,8 +67,12 @@ export default function RootLayout({
           <AuthProvider>
             <CartProvider>
               <WishlistProvider>
-                <LayoutWrapper>{children}</LayoutWrapper>
-                <Toaster />
+                <RecentlyViewedProvider>
+                  <CompareProvider>
+                    <LayoutWrapper>{children}</LayoutWrapper>
+                    <Toaster />
+                  </CompareProvider>
+                </RecentlyViewedProvider>
               </WishlistProvider>
             </CartProvider>
           </AuthProvider>
