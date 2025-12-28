@@ -258,7 +258,7 @@ const sortOptions: { value: SortOption; label: string }[] = [
 export default function ProductsPage() {
   const { addItem } = useCart();
   const { addItem: addToWishlist, isInWishlist, removeItem: removeFromWishlist } = useWishlist();
-  const { addProduct: addToCompare, isInCompare, itemCount: compareCount } = useCompare();
+  const { addProduct: addToCompare, isInCompare, products: compareProducts } = useCompare();
 
   /* ----------------------- Categories (derived) ------------------------- */
   const categories: Category[] = React.useMemo(() => {
@@ -394,6 +394,7 @@ export default function ProductsPage() {
           name: product.name,
           price: product.price,
           image: product.image,
+          category: product.category,
           originalPrice: product.originalPrice,
         });
         toast.success(`${product.name} added to wishlist`);
@@ -583,11 +584,11 @@ export default function ProductsPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              {compareCount > 0 && (
+              {compareProducts.length > 0 && (
                 <Link href="/compare">
                   <Button variant="outline" className="gap-2">
                     <GitCompare className="h-4 w-4" />
-                    Compare ({compareCount})
+                    Compare ({compareProducts.length})
                   </Button>
                 </Link>
               )}

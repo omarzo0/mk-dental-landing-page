@@ -368,7 +368,6 @@ export default function ProductDetailPage() {
       price: product.price,
       image: product.image,
       category: product.category,
-      inStock: product.inStock,
       originalPrice: product.originalPrice,
     });
     toast.success(isInWishlist(product.id) ? "Removed from wishlist" : "Added to wishlist");
@@ -396,7 +395,6 @@ export default function ProductDetailPage() {
       price: p.price,
       image: p.image,
       category: p.category,
-      inStock: p.inStock,
       originalPrice: p.originalPrice,
     });
     toast.success(isInWishlist(p.id) ? "Removed from wishlist" : "Added to wishlist");
