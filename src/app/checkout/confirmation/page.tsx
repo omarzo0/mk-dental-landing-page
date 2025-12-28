@@ -126,7 +126,7 @@ function ConfirmationContent() {
                   </p>
                 </div>
                 <p className="font-medium">
-                  ${(item.price * item.quantity).toFixed(2)}
+                  {(item.price * item.quantity).toFixed(2)} EGP
                 </p>
               </div>
             ))}
@@ -138,12 +138,12 @@ function ConfirmationContent() {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
-              <span>${orderDetails.subtotal.toFixed(2)}</span>
+              <span>{orderDetails.subtotal.toFixed(2)} EGP</span>
             </div>
             {orderDetails.discount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
                 <span>Discount</span>
-                <span>-${orderDetails.discount.toFixed(2)}</span>
+                <span>-{orderDetails.discount.toFixed(2)} EGP</span>
               </div>
             )}
             <div className="flex justify-between text-sm">
@@ -151,17 +151,17 @@ function ConfirmationContent() {
               <span>
                 {orderDetails.shipping === 0
                   ? "Free"
-                  : `$${orderDetails.shipping.toFixed(2)}`}
+                  : `${orderDetails.shipping.toFixed(2)} EGP`}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Tax</span>
-              <span>${orderDetails.tax.toFixed(2)}</span>
+              <span>{orderDetails.tax.toFixed(2)} EGP</span>
             </div>
             <Separator />
             <div className="flex justify-between font-semibold text-lg">
               <span>Total</span>
-              <span>${orderDetails.total.toFixed(2)}</span>
+              <span>{orderDetails.total.toFixed(2)} EGP</span>
             </div>
           </div>
         </CardContent>

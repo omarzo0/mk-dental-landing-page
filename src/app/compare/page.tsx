@@ -53,17 +53,17 @@ export default function ComparePage() {
 
   // Feature comparison rows
   const comparisonFeatures = [
-    { label: "Price", getValue: (p: typeof products[0]) => `$${p.price}` },
+    { label: "Price", getValue: (p: typeof products[0]) => `${p.price} EGP` },
     {
       label: "Original Price",
       getValue: (p: typeof products[0]) =>
-        p.originalPrice ? `$${p.originalPrice}` : "-",
+        p.originalPrice ? `${p.originalPrice} EGP` : "-",
     },
     {
       label: "Savings",
       getValue: (p: typeof products[0]) =>
         p.originalPrice
-          ? `$${(p.originalPrice - p.price).toFixed(2)} (${Math.round(
+          ? `${(p.originalPrice - p.price).toFixed(2)} EGP (${Math.round(
               ((p.originalPrice - p.price) / p.originalPrice) * 100
             )}%)`
           : "-",

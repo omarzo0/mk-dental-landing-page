@@ -19,14 +19,14 @@ const recentOrders = [
   {
     id: "ORD-001",
     date: "Dec 27, 2024",
-    total: "$199.97",
+    total: "199.97 EGP",
     status: "Delivered",
     items: 3,
   },
   {
     id: "ORD-002",
     date: "Dec 20, 2024",
-    total: "$499.99",
+    total: "499.99 EGP",
     status: "Shipped",
     items: 1,
   },

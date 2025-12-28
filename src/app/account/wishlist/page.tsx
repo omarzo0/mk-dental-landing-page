@@ -123,11 +123,11 @@ export default function WishlistPage() {
                 </Link>
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-lg font-bold">
-                    ${item.price.toFixed(2)}
+                    {item.price.toFixed(2)} EGP
                   </span>
                   {item.originalPrice && item.originalPrice > item.price && (
                     <span className="text-sm text-muted-foreground line-through">
-                      ${item.originalPrice.toFixed(2)}
+                      {item.originalPrice.toFixed(2)} EGP
                     </span>
                   )}
                 </div>
@@ -223,7 +223,7 @@ export default function WishlistPage() {
                   {product.name}
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  ${product.price.toFixed(2)}
+                  {product.price.toFixed(2)} EGP
                 </p>
               </Link>
             ))}

@@ -170,10 +170,10 @@ export function ProductCard({
                   <div className="mt-2">{renderStars()}</div>
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
+                  <span className="text-lg font-bold">{product.price.toFixed(2)} EGP</span>
                   {product.originalPrice && product.originalPrice > product.price && (
                     <span className="block text-sm text-muted-foreground line-through">
-                      ${product.originalPrice.toFixed(2)}
+                      {product.originalPrice.toFixed(2)} EGP
                     </span>
                   )}
                 </div>
@@ -333,7 +333,7 @@ export function ProductCard({
                 <div className="mt-1 hidden sm:block">{renderStars()}</div>
                 <div className="mt-1 flex flex-col gap-0 sm:mt-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 md:mt-2 md:gap-1.5">
                   <span className="text-xs font-semibold text-foreground sm:text-sm md:text-base">
-                    ${product.price.toFixed(2)}
+                    {product.price.toFixed(2)} EGP
                   </span>
                   {product.originalPrice ? (
                     <span className="text-[10px] text-muted-foreground line-through sm:text-xs md:text-sm">

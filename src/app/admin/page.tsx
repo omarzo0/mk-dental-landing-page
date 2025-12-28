@@ -37,7 +37,7 @@ import {
 const stats = [
   {
     title: "Total Revenue",
-    value: "$45,231.89",
+    value: "45,231.89 EGP",
     change: "+20.1%",
     changeType: "positive" as const,
     icon: DollarSign,
@@ -74,7 +74,7 @@ const recentOrders = [
     id: "ORD-001",
     customer: "Dr. Sarah Johnson",
     email: "sarah@clinic.com",
-    amount: "$1,250.00",
+    amount: "1,250.00 EGP",
     status: "completed",
     date: "2024-12-27",
   },
@@ -82,7 +82,7 @@ const recentOrders = [
     id: "ORD-002",
     customer: "Metro Dental Clinic",
     email: "orders@metrodental.com",
-    amount: "$3,499.00",
+    amount: "3,499.00 EGP",
     status: "processing",
     date: "2024-12-27",
   },
@@ -90,7 +90,7 @@ const recentOrders = [
     id: "ORD-003",
     customer: "Dr. Michael Chen",
     email: "mchen@dentalcare.com",
-    amount: "$749.99",
+    amount: "749.99 EGP",
     status: "pending",
     date: "2024-12-26",
   },
@@ -98,7 +98,7 @@ const recentOrders = [
     id: "ORD-004",
     customer: "Smile Dental Group",
     email: "purchase@smiledental.com",
-    amount: "$5,200.00",
+    amount: "5,200.00 EGP",
     status: "completed",
     date: "2024-12-26",
   },
@@ -106,18 +106,18 @@ const recentOrders = [
     id: "ORD-005",
     customer: "Dr. Emily Roberts",
     email: "emily@oralhealth.com",
-    amount: "$899.00",
+    amount: "899.00 EGP",
     status: "shipped",
     date: "2024-12-25",
   },
 ];
 
 const topProducts = [
-  { name: "Professional Dental Mirror Set", sales: 245, revenue: "$17,107.55", trend: "+12%" },
-  { name: "Dental Extraction Forceps Kit", sales: 189, revenue: "$47,248.11", trend: "+8%" },
-  { name: "Ultrasonic Scaler Unit", sales: 156, revenue: "$77,998.44", trend: "+15%" },
-  { name: "Composite Filling Instrument Set", sales: 142, revenue: "$18,457.58", trend: "+5%" },
-  { name: "Periodontal Curette Set", sales: 128, revenue: "$19,198.72", trend: "+3%" },
+  { name: "Professional Dental Mirror Set", sales: 245, revenue: "17,107.55 EGP", trend: "+12%" },
+  { name: "Dental Extraction Forceps Kit", sales: 189, revenue: "47,248.11 EGP", trend: "+8%" },
+  { name: "Ultrasonic Scaler Unit", sales: 156, revenue: "77,998.44 EGP", trend: "+15%" },
+  { name: "Composite Filling Instrument Set", sales: 142, revenue: "18,457.58 EGP", trend: "+5%" },
+  { name: "Periodontal Curette Set", sales: 128, revenue: "19,198.72 EGP", trend: "+3%" },
 ];
 
 const lowStockProducts = [
@@ -133,7 +133,7 @@ const recentActivity = [
   { action: "New customer", detail: "Sunshine Dental registered", time: "1 hour ago", type: "customer" },
   { action: "Order shipped", detail: "ORD-098 shipped via FedEx", time: "2 hours ago", type: "order" },
   { action: "Low stock alert", detail: "Dental Explorer Set (5 remaining)", time: "3 hours ago", type: "alert" },
-  { action: "Refund processed", detail: "ORD-095 refunded $149.99", time: "4 hours ago", type: "refund" },
+  { action: "Refund processed", detail: "ORD-095 refunded 149.99 EGP", time: "4 hours ago", type: "refund" },
 ];
 
 const orderSummary = {
@@ -250,7 +250,7 @@ function SimpleBarChart({ data }: { data: typeof revenueData.daily }) {
             <div 
               className="w-full bg-primary/80 rounded-t-sm transition-all hover:bg-primary min-h-[4px]"
               style={{ height: `${(item.value / maxValue) * 100}%` }}
-              title={`$${item.value.toLocaleString()}`}
+              title={`${item.value.toLocaleString()} EGP`}
             />
             <span className="text-xs text-muted-foreground mt-2 truncate w-full text-center">
               {item.label}
@@ -326,7 +326,7 @@ export default function AdminDashboardPage() {
             <div>
               <CardTitle>Revenue Overview</CardTitle>
               <CardDescription>
-                Total: ${totalRevenue.toLocaleString()}
+                Total: {totalRevenue.toLocaleString()} EGP
               </CardDescription>
             </div>
             <Select value={chartPeriod} onValueChange={(v) => setChartPeriod(v as typeof chartPeriod)}>

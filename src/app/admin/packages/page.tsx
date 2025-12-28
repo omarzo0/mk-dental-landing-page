@@ -161,9 +161,9 @@ export default function AdminPackagesPage() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">${pkg.price}</p>
+                        <p className="font-medium">{pkg.price} EGP</p>
                         <p className="text-xs text-muted-foreground line-through">
-                          ${pkg.originalPrice}
+                          {pkg.originalPrice} EGP
                         </p>
                       </div>
                     </TableCell>

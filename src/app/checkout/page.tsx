@@ -604,13 +604,13 @@ export default function CheckoutPage() {
                                 </span>
                                 {option.price > 0 && (
                                   <span className="text-sm text-muted-foreground line-through ml-2">
-                                    ${option.price.toFixed(2)}
+                                    {option.price.toFixed(2)} EGP
                                   </span>
                                 )}
                               </div>
                             ) : (
                               <span className="font-medium">
-                                ${option.price.toFixed(2)}
+                                {option.price.toFixed(2)} EGP
                               </span>
                             )}
                           </div>
@@ -624,7 +624,7 @@ export default function CheckoutPage() {
                       <p>
                         Add{" "}
                         <span className="font-medium">
-                          ${(100 - subtotal).toFixed(2)}
+                          {(100 - subtotal).toFixed(2)} EGP
                         </span>{" "}
                         more to qualify for free standard shipping!
                       </p>
@@ -817,7 +817,7 @@ export default function CheckoutPage() {
                           </div>
                           <div className="text-right">
                             <p className="font-medium">
-                              ${(item.price * item.quantity).toFixed(2)}
+                              {(item.price * item.quantity).toFixed(2)} EGP
                             </p>
                           </div>
                         </div>
@@ -931,7 +931,7 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       <Lock className="mr-2 h-4 w-4" />
-                      Place Order - ${total.toFixed(2)}
+                      Place Order - {total.toFixed(2)} EGP
                     </>
                   )}
                 </Button>
@@ -967,7 +967,7 @@ export default function CheckoutPage() {
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm truncate">{item.name}</h4>
                       <p className="text-sm text-muted-foreground">
-                        ${item.price.toFixed(2)} each
+                        {item.price.toFixed(2)} EGP each
                       </p>
                     </div>
                   </div>
@@ -1038,12 +1038,12 @@ export default function CheckoutPage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{subtotal.toFixed(2)} EGP</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>Discount</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+                    <span>-{discountAmount.toFixed(2)} EGP</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
@@ -1052,13 +1052,13 @@ export default function CheckoutPage() {
                     {shippingCost === 0 ? (
                       <span className="text-green-600">Free</span>
                     ) : (
-                      `$${shippingCost.toFixed(2)}`
+                      `${shippingCost.toFixed(2)} EGP`
                     )}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax</span>
-                  <span>${taxAmount.toFixed(2)}</span>
+                  <span>{taxAmount.toFixed(2)} EGP</span>
                 </div>
               </div>
 
@@ -1066,7 +1066,7 @@ export default function CheckoutPage() {
 
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{total.toFixed(2)} EGP</span>
               </div>
 
               {subtotal >= 100 && !appliedCoupon && (

@@ -96,7 +96,7 @@ const mockCoupons = [
     code: "FLAT50",
     type: "fixed" as const,
     value: 50,
-    description: "$50 off orders over $200",
+    description: "50 EGP off orders over 200 EGP",
     minPurchase: 200,
     maxDiscount: null,
     usageLimit: 200,

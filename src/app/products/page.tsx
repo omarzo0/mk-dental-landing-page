@@ -501,8 +501,8 @@ export default function ProductsPage() {
             step={10}
           />
           <div className="flex items-center justify-between text-sm">
-            <span>${priceRange[0]}</span>
-            <span>${priceRange[1]}</span>
+            <span>{priceRange[0]} EGP</span>
+            <span>{priceRange[1]} EGP</span>
           </div>
         </div>
       </div>
@@ -706,7 +706,7 @@ export default function ProductsPage() {
               ))}
               {(priceRange[0] > 0 || priceRange[1] < 2000) && (
                 <Badge variant="secondary" className="gap-1">
-                  ${priceRange[0]} - ${priceRange[1]}
+                  {priceRange[0]} - {priceRange[1]} EGP
                   <button onClick={() => setPriceRange([0, 2000])}>
                     <X className="h-3 w-3" />
                   </button>

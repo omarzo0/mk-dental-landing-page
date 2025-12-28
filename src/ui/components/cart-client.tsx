@@ -221,7 +221,7 @@ export function CartClient({ className }: CartClientProps) {
             {item.category}
           </p>
           <p className="mt-1 text-sm font-semibold text-primary">
-            ${item.price.toFixed(2)}
+            {item.price.toFixed(2)} EGP
           </p>
         </div>
 
@@ -275,7 +275,7 @@ export function CartClient({ className }: CartClientProps) {
       {/* Item Total */}
       <div className="absolute top-3 right-3">
         <span className="text-sm font-bold">
-          ${(item.price * item.quantity).toFixed(2)}
+          {(item.price * item.quantity).toFixed(2)} EGP
         </span>
       </div>
     </motion.div>
@@ -365,13 +365,13 @@ export function CartClient({ className }: CartClientProps) {
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Subtotal</span>
-              <span className="font-medium">${subtotal.toFixed(2)}</span>
+              <span className="font-medium">{subtotal.toFixed(2)} EGP</span>
             </div>
             
             {discount > 0 && (
               <div className="flex items-center justify-between text-green-600 dark:text-green-400">
                 <span>Discount ({discount}%)</span>
-                <span>-${discountAmount.toFixed(2)}</span>
+                <span>-{discountAmount.toFixed(2)} EGP</span>
               </div>
             )}
             
@@ -383,13 +383,13 @@ export function CartClient({ className }: CartClientProps) {
               {shippingCost === 0 ? (
                 <span className="font-medium text-green-600 dark:text-green-400">Free</span>
               ) : (
-                <span className="font-medium">${shippingCost.toFixed(2)}</span>
+                <span className="font-medium">{shippingCost.toFixed(2)} EGP</span>
               )}
             </div>
             
             {shippingCost > 0 && (
               <p className="text-xs text-muted-foreground">
-                Free shipping on orders over $500
+                Free shipping on orders over 500 EGP
               </p>
             )}
             
@@ -397,7 +397,7 @@ export function CartClient({ className }: CartClientProps) {
             
             <div className="flex items-center justify-between text-base">
               <span className="font-semibold">Total</span>
-              <span className="font-bold text-lg">${finalTotal.toFixed(2)}</span>
+              <span className="font-bold text-lg">{finalTotal.toFixed(2)} EGP</span>
             </div>
           </div>
 

@@ -232,14 +232,14 @@ export default function OrdersPage() {
                         {item.name} × {item.quantity}
                       </span>
                       <span className="font-medium">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        {(item.price * item.quantity).toFixed(2)} EGP
                       </span>
                     </div>
                   ))}
                   <Separator className="my-2" />
                   <div className="flex items-center justify-between font-medium">
                     <span>Total</span>
-                    <span>${order.total.toFixed(2)}</span>
+                    <span>{order.total.toFixed(2)} EGP</span>
                   </div>
                 </div>
 

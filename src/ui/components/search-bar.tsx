@@ -151,10 +151,10 @@ export function SearchBar({ className }: SearchBarProps) {
                         <p className="text-xs text-muted-foreground">{product.category}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">${product.price}</p>
+                        <p className="font-medium">{product.price} EGP</p>
                         {product.originalPrice && (
                           <p className="text-xs text-muted-foreground line-through">
-                            ${product.originalPrice}
+                            {product.originalPrice} EGP
                           </p>
                         )}
                       </div>

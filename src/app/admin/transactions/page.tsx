@@ -338,7 +338,7 @@ export default function AdminTransactionsPage() {
                         "font-medium",
                         txn.type === "refund" ? "text-red-600" : "text-green-600"
                       )}>
-                        {txn.type === "refund" ? "-" : "+"}${Math.abs(txn.amount).toFixed(2)}
+                        {txn.type === "refund" ? "-" : "+"}{Math.abs(txn.amount).toFixed(2)} EGP
                       </span>
                     </TableCell>
                     <TableCell>
@@ -430,18 +430,18 @@ export default function AdminTransactionsPage() {
               <div className="rounded-lg border p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Amount</span>
-                  <span>${Math.abs(selectedTransaction.amount).toFixed(2)}</span>
+                  <span>{Math.abs(selectedTransaction.amount).toFixed(2)} EGP</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Processing Fee</span>
-                  <span>-${selectedTransaction.fee.toFixed(2)}</span>
+                  <span>-{selectedTransaction.fee.toFixed(2)} EGP</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-medium">
                   <span>Net Amount</span>
                   <span className={cn(
                     selectedTransaction.type === "refund" ? "text-red-600" : "text-green-600"
                   )}>
-                    {selectedTransaction.type === "refund" ? "-" : ""}${Math.abs(selectedTransaction.net).toFixed(2)}
+                    {selectedTransaction.type === "refund" ? "-" : ""}{Math.abs(selectedTransaction.net).toFixed(2)} EGP
                   </span>
                 </div>
               </div>

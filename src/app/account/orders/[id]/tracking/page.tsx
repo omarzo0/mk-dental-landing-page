@@ -248,13 +248,13 @@ export default function OrderTrackingPage() {
                 <span>
                   {item.name} × {item.quantity}
                 </span>
-                <span>${item.price.toFixed(2)}</span>
+                <span>{item.price.toFixed(2)} EGP</span>
               </div>
             ))}
             <Separator />
             <div className="flex justify-between font-medium">
               <span>Total</span>
-              <span>${order.total.toFixed(2)}</span>
+              <span>{order.total.toFixed(2)} EGP</span>
             </div>
           </CardContent>
         </Card>

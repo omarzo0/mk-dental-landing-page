@@ -316,27 +316,27 @@ export default function AdminOrdersPage() {
                 <tr>
                   <td>${item.name}</td>
                   <td>${item.quantity}</td>
-                  <td>$${item.price.toFixed(2)}</td>
-                  <td>$${(item.quantity * item.price).toFixed(2)}</td>
+                  <td>${item.price.toFixed(2)} EGP</td>
+                  <td>${(item.quantity * item.price).toFixed(2)} EGP</td>
                 </tr>
               `).join('')}
             </tbody>
             <tfoot>
               <tr>
                 <td colspan="3" style="text-align: right;"><strong>Subtotal:</strong></td>
-                <td>$${order.subtotal.toFixed(2)}</td>
+                <td>${order.subtotal.toFixed(2)} EGP</td>
               </tr>
               <tr>
                 <td colspan="3" style="text-align: right;"><strong>Shipping:</strong></td>
-                <td>$${order.shipping.toFixed(2)}</td>
+                <td>${order.shipping.toFixed(2)} EGP</td>
               </tr>
               <tr>
                 <td colspan="3" style="text-align: right;"><strong>Tax:</strong></td>
-                <td>$${order.tax.toFixed(2)}</td>
+                <td>${order.tax.toFixed(2)} EGP</td>
               </tr>
               <tr class="total">
                 <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
-                <td><strong>$${order.total.toFixed(2)}</strong></td>
+                <td><strong>${order.total.toFixed(2)} EGP</strong></td>
               </tr>
             </tfoot>
           </table>
@@ -565,7 +565,7 @@ export default function AdminOrdersPage() {
                     </TableCell>
                     <TableCell>{order.date}</TableCell>
                     <TableCell className="font-medium">
-                      ${order.total.toFixed(2)}
+                      {order.total.toFixed(2)} EGP
                     </TableCell>
                     <TableCell>
                       <Badge variant={paymentStatusColors[order.paymentStatus as PaymentStatus]} className="capitalize">
@@ -686,30 +686,30 @@ export default function AdminOrdersPage() {
                       <div>
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          Qty: {item.quantity} × ${item.price.toFixed(2)}
+                          Qty: {item.quantity} × {item.price.toFixed(2)} EGP
                         </p>
                       </div>
                       <p className="font-medium">
-                        ${(item.quantity * item.price).toFixed(2)}
+                        {(item.quantity * item.price).toFixed(2)} EGP
                       </p>
                     </div>
                   ))}
                   <div className="p-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Subtotal</span>
-                      <span>${selectedOrder.subtotal.toFixed(2)}</span>
+                      <span>{selectedOrder.subtotal.toFixed(2)} EGP</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Shipping</span>
-                      <span>${selectedOrder.shipping.toFixed(2)}</span>
+                      <span>{selectedOrder.shipping.toFixed(2)} EGP</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Tax</span>
-                      <span>${selectedOrder.tax.toFixed(2)}</span>
+                      <span>{selectedOrder.tax.toFixed(2)} EGP</span>
                     </div>
                     <div className="flex justify-between font-semibold text-lg pt-2 border-t">
                       <span>Total</span>
-                      <span>${selectedOrder.total.toFixed(2)}</span>
+                      <span>{selectedOrder.total.toFixed(2)} EGP</span>
                     </div>
                   </div>
                 </div>
@@ -787,7 +787,7 @@ export default function AdminOrdersPage() {
             <div className="space-y-4 py-4">
               <div className="rounded-lg border p-4">
                 <p className="text-sm text-muted-foreground">Refund Amount</p>
-                <p className="text-2xl font-bold">${selectedOrder.total.toFixed(2)}</p>
+                <p className="text-2xl font-bold">{selectedOrder.total.toFixed(2)} EGP</p>
               </div>
               <p className="text-sm text-muted-foreground">
                 This will refund the full order amount to the customer's original payment method.

@@ -135,10 +135,10 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
 
               {/* Price */}
               <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-3xl font-bold">${product.price}</span>
+                <span className="text-3xl font-bold">{product.price} EGP</span>
                 {product.originalPrice && (
                   <span className="text-lg text-muted-foreground line-through">
-                    ${product.originalPrice}
+                    {product.originalPrice} EGP
                   </span>
                 )}
               </div>
