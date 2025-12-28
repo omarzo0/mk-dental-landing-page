@@ -4,11 +4,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { SEO_CONFIG } from "~/app";
+import { AuthProvider } from "~/lib/hooks/use-auth";
 import { CartProvider } from "~/lib/hooks/use-cart";
 import { WishlistProvider } from "~/lib/hooks/use-wishlist";
 import "~/css/globals.css";
-import { Footer } from "~/ui/components/footer";
-import { Header } from "~/ui/components/header/header";
+import { LayoutWrapper } from "~/ui/components/layout-wrapper";
 import { ThemeProvider } from "~/ui/components/theme-provider";
 import { Toaster } from "~/ui/primitives/sonner";
 
@@ -62,14 +62,14 @@ export default function RootLayout({
           disableTransitionOnChange
           enableSystem
         >
-          <CartProvider>
-            <WishlistProvider>
-              <Header showAuth={true} />
-              <main className={`flex min-h-screen flex-col`}>{children}</main>
-              <Footer />
-              <Toaster />
-            </WishlistProvider>
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <LayoutWrapper>{children}</LayoutWrapper>
+                <Toaster />
+              </WishlistProvider>
+            </CartProvider>
+          </AuthProvider>
         </ThemeProvider>
         <SpeedInsights />
       </body>

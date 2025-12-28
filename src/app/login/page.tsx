@@ -2,9 +2,11 @@
 
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 
+import { useAuth } from "~/lib/hooks/use-auth";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/ui/primitives/card";
 import { Checkbox } from "~/ui/primitives/checkbox";
@@ -14,14 +16,36 @@ import { Label } from "~/ui/primitives/label";
 export default function LoginPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const { login, isAuthenticated, isAdmin } = useAuth();
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      if (isAdmin) {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
+    }
+  }, [isAuthenticated, isAdmin, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+
+    const result = await login(email, password);
+
+    if (result.success) {
       toast.success("Welcome back! You have successfully logged in.");
-    }, 1500);
+      // Router push will happen via the useEffect above
+    } else {
+      toast.error(result.error || "Failed to login");
+    }
+
+    setIsLoading(false);
   };
 
   return (
@@ -41,6 +65,8 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 placeholder="john@clinic.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
@@ -51,6 +77,8 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
                 <Button

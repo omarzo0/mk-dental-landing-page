@@ -1,17 +1,27 @@
 "use client";
 
-import { Heart, Menu, X } from "lucide-react";
+import { Heart, LayoutDashboard, LogOut, Menu, Settings, User, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { SEO_CONFIG } from "~/app";
 import { cn } from "~/lib/cn";
+import { useAuth } from "~/lib/hooks/use-auth";
 import { useWishlist } from "~/lib/hooks/use-wishlist";
 import { Cart } from "~/ui/components/cart";
+import { Avatar, AvatarFallback } from "~/ui/primitives/avatar";
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/ui/primitives/dropdown-menu";
 
 import { ThemeToggle } from "../theme-toggle";
 
@@ -22,8 +32,21 @@ interface HeaderProps {
 
 export function Header({ showAuth = true }: HeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { itemCount: wishlistCount } = useWishlist();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
+
+  const userInitials = user?.name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase() || "U";
 
   const navigation = [
     { href: "/", name: "Home" },
@@ -128,16 +151,79 @@ export function Header({ showAuth = true }: HeaderProps) {
             {/* Auth buttons - hidden on mobile, shown in mobile menu */}
             {showAuth && (
               <div className="hidden items-center gap-2 md:flex">
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button size="sm">
-                    Sign Up
-                  </Button>
-                </Link>
+                {isAuthenticated ? (
+                  <>
+                    {/* Admin Badge Link */}
+                    {isAdmin && (
+                      <Link href="/admin">
+                        <Button variant="outline" size="sm" className="gap-2 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground">
+                          <LayoutDashboard className="h-4 w-4" />
+                          <span className="font-medium">Admin</span>
+                        </Button>
+                      </Link>
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="relative">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                              {userInitials}
+                            </AvatarFallback>
+                          </Avatar>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel>
+                          <div className="flex flex-col">
+                            <span>{user?.name}</span>
+                            <span className="text-xs font-normal text-muted-foreground">
+                              {user?.email}
+                            </span>
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {isAdmin && (
+                          <DropdownMenuItem asChild>
+                            <Link href="/admin">
+                              <LayoutDashboard className="mr-2 h-4 w-4" />
+                              Admin Dashboard
+                            </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem asChild>
+                        <Link href="/account">
+                          <User className="mr-2 h-4 w-4" />
+                          My Account
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/account/settings">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Settings
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Log out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login">
+                      <Button variant="ghost" size="sm">
+                        Login
+                      </Button>
+                    </Link>
+                    <Link href="/signup">
+                      <Button size="sm">
+                        Sign Up
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -174,17 +260,56 @@ export function Header({ showAuth = true }: HeaderProps) {
             })}
             {/* Auth links for mobile */}
             {showAuth && (
-              <div className="mt-3 flex gap-2 border-t pt-3">
-                <Link href="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/signup" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full">
-                    Sign Up
-                  </Button>
-                </Link>
+              <div className="mt-3 border-t pt-3">
+                {isAuthenticated ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 px-3 py-2">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {userInitials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{user?.name}</p>
+                        <p className="text-sm text-muted-foreground">{user?.email}</p>
+                      </div>
+                    </div>
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-2 rounded-md px-3 py-2 text-base font-medium hover:bg-muted/50"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <Button
+                      variant="outline"
+                      className="w-full mt-2"
+                      onClick={() => {
+                        handleLogout();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Link href="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        Login
+                      </Button>
+                    </Link>
+                    <Link href="/signup" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                      <Button className="w-full">
+                        Sign Up
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>

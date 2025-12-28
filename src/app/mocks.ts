@@ -45,6 +45,76 @@ export const featuredProductsHomepage = [
   },
 ];
 
+// All products for the products page and admin
+export const products = [
+  {
+    category: "Diagnostic Instruments",
+    id: "1",
+    image:
+      "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=800&auto=format&fit=crop&q=60",
+    inStock: true,
+    name: "Professional Dental Mirror Set",
+    originalPrice: 89.99,
+    price: 69.99,
+    rating: 4.8,
+  },
+  {
+    category: "Surgical Instruments",
+    id: "2",
+    image:
+      "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=800&auto=format&fit=crop&q=60",
+    inStock: true,
+    name: "Dental Extraction Forceps Kit",
+    originalPrice: 299.99,
+    price: 249.99,
+    rating: 4.9,
+  },
+  {
+    category: "Diagnostic Instruments",
+    id: "3",
+    image:
+      "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&auto=format&fit=crop&q=60",
+    inStock: false,
+    name: "Dental Explorer Set (Double-Ended)",
+    originalPrice: 79.99,
+    price: 59.99,
+    rating: 4.7,
+  },
+  {
+    category: "Restorative Tools",
+    id: "4",
+    image:
+      "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=800&auto=format&fit=crop&q=60",
+    inStock: true,
+    name: "Composite Filling Instrument Set",
+    originalPrice: 159.99,
+    price: 129.99,
+    rating: 4.6,
+  },
+  {
+    category: "Hygiene Equipment",
+    id: "5",
+    image:
+      "https://images.unsplash.com/photo-1598256989800-fe5f95da9787?w=800&auto=format&fit=crop&q=60",
+    inStock: true,
+    name: "Ultrasonic Scaler Unit",
+    originalPrice: 599.99,
+    price: 499.99,
+    rating: 4.9,
+  },
+  {
+    category: "Surgical Instruments",
+    id: "6",
+    image:
+      "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&auto=format&fit=crop&q=60",
+    inStock: true,
+    name: "Periodontal Curette Set",
+    originalPrice: 189.99,
+    price: 149.99,
+    rating: 4.8,
+  },
+];
+
 // Categories for the shop by category section
 export const categories = [
   {
