@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useCart } from "~/lib/hooks/use-cart";
 import { useWishlist } from "~/lib/hooks/use-wishlist";
 import { Badge } from "~/ui/primitives/badge";
+import { resolveImageUrl } from "~/lib/image-utils";
 import { Button } from "~/ui/primitives/button";
 import {
   Card,
@@ -141,9 +142,9 @@ export default function WishlistPage() {
               {items.map((item) => {
                 const discount = item.originalPrice
                   ? Math.round(
-                      ((item.originalPrice - item.price) / item.originalPrice) *
-                        100
-                    )
+                    ((item.originalPrice - item.price) / item.originalPrice) *
+                    100
+                  )
                   : 0;
 
                 return (
@@ -171,7 +172,7 @@ export default function WishlistPage() {
                         )}
                         <Image
                           alt={item.name}
-                          src={item.image}
+                          src={resolveImageUrl(item.image)}
                           fill
                           className="object-cover transition-transform duration-300 group-hover:scale-105"
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

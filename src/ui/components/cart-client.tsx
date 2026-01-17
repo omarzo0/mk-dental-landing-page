@@ -1,18 +1,19 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { 
-  Heart, 
-  Minus, 
-  Plus, 
-  ShoppingCart, 
-  Trash2, 
+import {
+  Heart,
+  Minus,
+  Plus,
+  ShoppingCart,
+  Trash2,
   X,
   ShoppingBag,
   Truck,
   CreditCard,
   Tag,
 } from "lucide-react";
+import { resolveImageUrl } from "~/lib/image-utils";
 import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
@@ -28,6 +29,7 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerTitle,
   DrawerTrigger,
 } from "~/ui/primitives/drawer";
 import { Input } from "~/ui/primitives/input";
@@ -36,6 +38,7 @@ import {
   Sheet,
   SheetClose,
   SheetContent,
+  SheetTitle,
   SheetTrigger,
 } from "~/ui/primitives/sheet";
 
@@ -44,14 +47,22 @@ interface CartClientProps {
 }
 
 export function CartClient({ className }: CartClientProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
   const [isMounted, setIsMounted] = React.useState(false);
   const [promoCode, setPromoCode] = React.useState("");
   const [appliedPromo, setAppliedPromo] = React.useState<string | null>(null);
   const [discount, setDiscount] = React.useState(0);
-  
+
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  const { items: cartItems, itemCount: totalItems, subtotal, updateQuantity, removeItem, clearCart } = useCart();
+  const {
+    items: cartItems,
+    itemCount: totalItems,
+    subtotal,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    isCartOpen,
+    setIsCartOpen
+  } = useCart();
   const { addItem: addToWishlist } = useWishlist();
 
   React.useEffect(() => {
@@ -96,7 +107,7 @@ export function CartClient({ className }: CartClientProps) {
       "DENTAL20": 20,
       "FLAT50": 50,
     };
-    
+
     const code = promoCode.toUpperCase().trim();
     if (codes[code]) {
       setAppliedPromo(code);
@@ -115,7 +126,7 @@ export function CartClient({ className }: CartClientProps) {
   };
 
   const discountAmount = (subtotal * discount) / 100;
-  const shippingCost = subtotal > 500 ? 0 : 50;
+  const shippingCost = 0;
   const finalTotal = subtotal - discountAmount + shippingCost;
 
   const CartTrigger = (
@@ -192,16 +203,16 @@ export function CartClient({ className }: CartClientProps) {
       transition={{ duration: 0.2 }}
     >
       {/* Product Image */}
-      <Link 
+      <Link
         href={`/products/${item.id}`}
-        onClick={() => setIsOpen(false)}
+        onClick={() => setIsCartOpen(false)}
         className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-muted"
       >
         <Image
           alt={item.name}
           className="object-cover transition-transform group-hover:scale-105"
           fill
-          src={item.image}
+          src={resolveImageUrl(item.image)}
         />
       </Link>
 
@@ -212,7 +223,7 @@ export function CartClient({ className }: CartClientProps) {
             <Link
               className="line-clamp-2 text-sm font-medium leading-tight hover:text-primary transition-colors"
               href={`/products/${item.id}`}
-              onClick={() => setIsOpen(false)}
+              onClick={() => setIsCartOpen(false)}
             >
               {item.name}
             </Link>
@@ -272,12 +283,6 @@ export function CartClient({ className }: CartClientProps) {
         </div>
       </div>
 
-      {/* Item Total */}
-      <div className="absolute top-3 right-3">
-        <span className="text-sm font-bold">
-          {(item.price * item.quantity).toFixed(2)} EGP
-        </span>
-      </div>
     </motion.div>
   );
 
@@ -323,81 +328,18 @@ export function CartClient({ className }: CartClientProps) {
       {/* Footer - Summary & Checkout */}
       {cartItems.length > 0 && (
         <div className="border-t bg-muted/30 px-6 py-4">
-          {/* Promo Code */}
-          <div className="mb-4">
-            {appliedPromo ? (
-              <div className="flex items-center justify-between rounded-lg bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm">
-                <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
-                  <Tag className="h-4 w-4" />
-                  <span className="font-medium">{appliedPromo}</span>
-                  <span>(-{discount}%)</span>
-                </div>
-                <button
-                  onClick={handleRemovePromo}
-                  className="text-green-700 dark:text-green-400 hover:text-green-900"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Promo code"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  className="h-9 text-sm"
-                  onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleApplyPromo}
-                  disabled={!promoCode.trim()}
-                  className="h-9"
-                >
-                  Apply
-                </Button>
-              </div>
-            )}
-          </div>
-
           {/* Order Summary */}
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span className="font-medium">{subtotal.toFixed(2)} EGP</span>
-            </div>
-            
+          <div className="space-y-2 text-sm mb-4">
             {discount > 0 && (
-              <div className="flex items-center justify-between text-green-600 dark:text-green-400">
+              <div className="flex items-center justify-between text-destructive">
                 <span>Discount ({discount}%)</span>
                 <span>-{discountAmount.toFixed(2)} EGP</span>
               </div>
             )}
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Truck className="h-3.5 w-3.5" />
-                <span>Shipping</span>
-              </div>
-              {shippingCost === 0 ? (
-                <span className="font-medium text-green-600 dark:text-green-400">Free</span>
-              ) : (
-                <span className="font-medium">{shippingCost.toFixed(2)} EGP</span>
-              )}
-            </div>
-            
-            {shippingCost > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Free shipping on orders over 500 EGP
-              </p>
-            )}
-            
             <Separator className="my-2" />
-            
             <div className="flex items-center justify-between text-base">
               <span className="font-semibold">Total</span>
-              <span className="font-bold text-lg">{finalTotal.toFixed(2)} EGP</span>
+              <span className="font-bold text-lg text-primary">{finalTotal.toFixed(2)} EGP</span>
             </div>
           </div>
 
@@ -480,16 +422,18 @@ export function CartClient({ className }: CartClientProps) {
   return (
     <div className={cn("relative", className)}>
       {isDesktop ? (
-        <Sheet onOpenChange={setIsOpen} open={isOpen}>
+        <Sheet onOpenChange={setIsCartOpen} open={isCartOpen}>
           <SheetTrigger asChild>{CartTrigger}</SheetTrigger>
           <SheetContent className="flex w-[420px] flex-col p-0 sm:max-w-[420px]">
+            <SheetTitle className="sr-only">Shopping Cart Overview</SheetTitle>
             {CartContent}
           </SheetContent>
         </Sheet>
       ) : (
-        <Drawer onOpenChange={setIsOpen} open={isOpen}>
+        <Drawer onOpenChange={setIsCartOpen} open={isCartOpen}>
           <DrawerTrigger asChild>{CartTrigger}</DrawerTrigger>
           <DrawerContent className="max-h-[90vh]">
+            <DrawerTitle className="sr-only">Shopping Cart Overview</DrawerTitle>
             {CartContent}
           </DrawerContent>
         </Drawer>

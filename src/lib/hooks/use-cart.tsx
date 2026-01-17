@@ -16,6 +16,10 @@ export interface CartContextType {
   removeItem: (id: string) => void;
   subtotal: number;
   updateQuantity: (id: string, quantity: number) => void;
+  isCartOpen: boolean;
+  setIsCartOpen: (open: boolean) => void;
+  openCart: () => void;
+  closeCart: () => void;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -52,6 +56,10 @@ const loadCartFromStorage = (): CartItem[] => {
 
 export function CartProvider({ children }: React.PropsWithChildren) {
   const [items, setItems] = React.useState<CartItem[]>(loadCartFromStorage);
+  const [isCartOpen, setIsCartOpen] = React.useState(false);
+
+  const openCart = React.useCallback(() => setIsCartOpen(true), []);
+  const closeCart = React.useCallback(() => setIsCartOpen(false), []);
 
   /* -------------------- Persist to localStorage (debounced) ------------- */
   const saveTimeout = React.useRef<null | ReturnType<typeof setTimeout>>(null);
@@ -126,6 +134,10 @@ export function CartProvider({ children }: React.PropsWithChildren) {
       removeItem,
       subtotal,
       updateQuantity,
+      isCartOpen,
+      setIsCartOpen,
+      openCart,
+      closeCart,
     }),
     [
       items,
@@ -135,6 +147,10 @@ export function CartProvider({ children }: React.PropsWithChildren) {
       clearCart,
       itemCount,
       subtotal,
+      isCartOpen,
+      setIsCartOpen,
+      openCart,
+      closeCart,
     ],
   );
 

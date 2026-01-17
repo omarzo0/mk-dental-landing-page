@@ -5,8 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
 
-import { packages } from "~/app/mocks";
 import { useCart } from "~/lib/hooks/use-cart";
+import { resolveImageUrl } from "~/lib/image-utils";
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
 import {
@@ -19,37 +19,113 @@ import {
 } from "~/ui/primitives/card";
 import { Input } from "~/ui/primitives/input";
 
+interface PackageItem {
+  _id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  image?: string;
+  productId?: any;
+}
+
+interface Package {
+  _id: string;
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  image?: string;
+  images?: string[];
+  isActive?: boolean;
+  status?: string;
+  items: PackageItem[];
+  packageItems?: PackageItem[];
+  createdAt: string;
+  updatedAt: string;
+  badge?: string;
+  savings?: number;
+  itemCount?: number;
+  packageDetails?: {
+    totalItemsCount: number;
+    originalTotalPrice: number;
+    savings: number;
+    savingsPercentage: number;
+  };
+}
+
 export default function PackagesPage() {
-  const { addItem } = useCart();
+  const { addItem, openCart } = useCart();
   const [addingToCart, setAddingToCart] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [packages, setPackages] = React.useState<Package[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  // Fetch packages from API
+  React.useEffect(() => {
+    fetch("/api/products?productType=package&limit=100")
+      .then((res) => res.json())
+      .then((data: any) => {
+        const rawPackages = data.success && Array.isArray(data.data)
+          ? data.data
+          : data.success && data.data?.products
+            ? data.data.products
+            : data.success && data.data?.packages
+              ? data.data.packages
+              : [];
+        // Transform API data to match interface
+        const transformedPackages = rawPackages
+          .filter((pkg: any) => pkg.productType === "package")
+          .map((pkg: any) => ({
+            ...pkg,
+            id: pkg._id,
+            image: (() => {
+              const firstImage = pkg.images?.[0] || pkg.image;
+              if (!firstImage) return undefined;
+              return typeof firstImage === "string" ? firstImage : (firstImage.url || undefined);
+            })(),
+            items: pkg.packageItems || pkg.items || [],
+            badge: pkg.packageDetails?.savingsPercentage ? `${pkg.packageDetails.savingsPercentage}% OFF` : undefined,
+            savings: pkg.packageDetails?.savingsPercentage || 0,
+            itemCount: pkg.packageDetails?.totalItemsCount || pkg.packageItems?.length || 0,
+            originalPrice: pkg.packageDetails?.originalTotalPrice
+          }));
+        setPackages(transformedPackages);
+      })
+      .catch((error) => {
+        console.error("Packages API error:", error);
+        setPackages([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   // Filter packages by search
   const filteredPackages = React.useMemo(() => {
     if (!searchQuery.trim()) return packages;
-    
+
     const query = searchQuery.toLowerCase();
     return packages.filter(
       (pkg) =>
         pkg.name.toLowerCase().includes(query) ||
         pkg.description.toLowerCase().includes(query) ||
-        pkg.items.some((item) => item.toLowerCase().includes(query))
+        pkg.items.some((item) => item.name.toLowerCase().includes(query))
     );
-  }, [searchQuery]);
+  }, [packages, searchQuery]);
 
-  const handleAddToCart = (pkg: (typeof packages)[0]) => {
-    setAddingToCart(pkg.id);
+  const handleAddToCart = (pkg: Package) => {
+    setAddingToCart(pkg._id);
     setTimeout(() => {
       addItem(
         {
-          id: pkg.id,
+          id: pkg._id,
           name: pkg.name,
           price: pkg.price,
-          image: pkg.image,
+          image: resolveImageUrl(pkg.image) || "/placeholder.svg",
           category: "Package",
         },
-        1
+        1,
       );
+      openCart();
       setAddingToCart(null);
     }, 600);
   };
@@ -141,7 +217,8 @@ export default function PackagesPage() {
                     className="object-cover"
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    src={pkg.image}
+                    src={resolveImageUrl(pkg.image) || "/placeholder.svg"}
+                    unoptimized
                   />
                 </div>
 
@@ -157,16 +234,16 @@ export default function PackagesPage() {
                   {/* Items included */}
                   <div className="mb-4">
                     <h4 className="mb-2 text-sm font-semibold text-foreground">
-                      What's Included ({pkg.itemCount} items):
+                      What's Included ({pkg.itemCount || pkg.items?.length || 0} items):
                     </h4>
                     <ul className="space-y-1.5">
-                      {pkg.items.map((item) => (
+                      {pkg.items?.map((item) => (
                         <li
-                          key={item}
+                          key={item._id}
                           className="flex items-center gap-2 text-sm text-muted-foreground"
                         >
-                          <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                          {item}
+                          <Check className="h-3.5 w-3.5 flex-shrink-0 text-green-500" />
+                          <span>{item.quantity}x {item.name}</span>
                         </li>
                       ))}
                     </ul>
@@ -179,20 +256,26 @@ export default function PackagesPage() {
                         <div className="text-2xl font-bold text-foreground sm:text-3xl">
                           {pkg.price.toFixed(2)} EGP
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-sm text-muted-foreground line-through">
-                            {pkg.originalPrice.toFixed(2)} EGP
-                          </span>
-                          <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                            Save {pkg.savings} EGP
-                          </Badge>
-                        </div>
+                        {pkg.originalPrice && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-sm text-muted-foreground line-through">
+                              {pkg.originalPrice.toFixed(2)} EGP
+                            </span>
+                            {pkg.savings && (
+                              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                Save {pkg.savings}%
+                              </Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <div className="text-lg font-semibold text-primary">
-                          {Math.round((pkg.savings / pkg.originalPrice) * 100)}% OFF
+                      {pkg.originalPrice && pkg.savings && (
+                        <div className="text-right">
+                          <div className="text-lg font-semibold text-primary">
+                            {pkg.savings}% OFF
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>

@@ -12,8 +12,19 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { Metadata } from "next"; // Kept import for type if needed, though unused
+import { useSearchParams } from "next/navigation";
 import * as React from "react";
+import { Suspense } from "react";
 import { toast } from "sonner";
+import { resolveImageUrl } from "~/lib/image-utils";
+import { JsonLd } from "~/ui/components/json-ld";
+
+// Metadata export removed to avoid "metadata in client component" error
+// export const metadata: Metadata = {
+//   title: "Professional Dental Instruments",
+//   description: "Browse our extensive catalog of high-quality dental tools, mirrors, forceps, and surgical instruments.",
+// };
 
 import { useCart } from "~/lib/hooks/use-cart";
 import { useCompare } from "~/lib/hooks/use-compare";
@@ -46,201 +57,44 @@ import { Slider } from "~/ui/primitives/slider";
 /*                                   Types                                    */
 /* -------------------------------------------------------------------------- */
 
-type Category = string;
 type SortOption = "featured" | "newest" | "price-low" | "price-high" | "rating" | "name";
 
+interface CategoryData {
+  name: string;
+  subcategories?: (string | { name: string })[];
+  showInMenu?: boolean;
+  productCount?: number;
+  icon?: string;
+}
+
 interface Product {
-  category: string;
+  category: string; // Keep as string or handle mixed type if needed, but robustly it's usually normalized to name or ID
+  subcategory?: string;
   id: string;
   image: string;
   inStock: boolean;
   name: string;
   originalPrice?: number;
   price: number;
+  discountedPrice?: number;
+  discount?: {
+    type: "percentage" | "fixed";
+    value: number;
+    isActive: boolean;
+    discountedPrice?: number;
+  };
   rating: number;
   brand?: string;
   reviews?: number;
 }
 
-/* -------------------------------------------------------------------------- */
-/*                            Helpers / utilities                             */
-/* -------------------------------------------------------------------------- */
-
-const slugify = (str: string) =>
-  str
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^\w-]+/g, "");
-
-/* -------------------------------------------------------------------------- */
-/*                               Mock data                                    */
-/* -------------------------------------------------------------------------- */
-
-const products: Product[] = [
-  {
-    category: "Diagnostic Instruments",
-    id: "1",
-    image:
-      "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=800&auto=format&fit=crop&q=60",
-    inStock: true,
-    name: "Professional Dental Mirror Set",
-    originalPrice: 89.99,
-    price: 69.99,
-    rating: 4.8,
-    brand: "MK Dental",
-    reviews: 124,
-  },
-  {
-    category: "Surgical Instruments",
-    id: "2",
-    image:
-      "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=800&auto=format&fit=crop&q=60",
-    inStock: true,
-    name: "Dental Extraction Forceps Kit",
-    originalPrice: 299.99,
-    price: 249.99,
-    rating: 4.9,
-    brand: "ProDent",
-    reviews: 89,
-  },
-  {
-    category: "Diagnostic Instruments",
-    id: "3",
-    image:
-      "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&auto=format&fit=crop&q=60",
-    inStock: false,
-    name: "Dental Explorer Set (Double-Ended)",
-    originalPrice: 79.99,
-    price: 59.99,
-    rating: 4.7,
-    brand: "DentaTech",
-    reviews: 56,
-  },
-  {
-    category: "Restorative Tools",
-    id: "4",
-    image:
-      "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=800&auto=format&fit=crop&q=60",
-    inStock: true,
-    name: "Composite Filling Instrument Set",
-    originalPrice: 159.99,
-    price: 129.99,
-    rating: 4.6,
-    brand: "MK Dental",
-    reviews: 78,
-  },
-  {
-    category: "Hygiene Equipment",
-    id: "5",
-    image:
-      "https://images.unsplash.com/photo-1598256989800-fe5f95da9787?w=800&auto=format&fit=crop&q=60",
-    inStock: true,
-    name: "Ultrasonic Scaler Unit",
-    originalPrice: 599.99,
-    price: 499.99,
-    rating: 4.9,
-    brand: "ProDent",
-    reviews: 203,
-  },
-  {
-    category: "Surgical Instruments",
-    id: "6",
-    image:
-      "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&auto=format&fit=crop&q=60",
-    inStock: true,
-    name: "Periodontal Curette Set",
-    originalPrice: 189.99,
-    price: 149.99,
-    rating: 4.8,
-    brand: "DentaTech",
-    reviews: 67,
-  },
-  {
-    category: "Disposables",
-    id: "7",
-    image:
-      "https://images.unsplash.com/photo-1584362917165-526a968579e8?w=800&auto=format&fit=crop&q=60",
-    inStock: true,
-    name: "Disposable Prophy Angles (500pc)",
-    price: 89.99,
-    rating: 4.5,
-    brand: "MK Dental",
-    reviews: 312,
-  },
-  {
-    category: "Disposables",
-    id: "8",
-    image:
-      "https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=800&auto=format&fit=crop&q=60",
-    inStock: true,
-    name: "Sterilization Pouches (200pc)",
-    price: 24.99,
-    rating: 4.7,
-    brand: "MK Dental",
-    reviews: 445,
-  },
-  {
-    category: "Orthodontic",
-    id: "9",
-    image:
-      "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=800&auto=format&fit=crop&q=60",
-    inStock: true,
-    name: "Orthodontic Bracket Kit",
-    originalPrice: 399.99,
-    price: 349.99,
-    rating: 4.8,
-    brand: "OrthoMax",
-    reviews: 156,
-  },
-  {
-    category: "Restorative Tools",
-    id: "10",
-    image:
-      "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=800&auto=format&fit=crop&q=60",
-    inStock: true,
-    name: "Dental Composite Kit",
-    originalPrice: 179.99,
-    price: 159.99,
-    rating: 4.6,
-    brand: "DentaTech",
-    reviews: 98,
-  },
-  {
-    category: "Equipment",
-    id: "11",
-    image:
-      "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=800&auto=format&fit=crop&q=60",
-    inStock: true,
-    name: "LED Curing Light",
-    originalPrice: 299.99,
-    price: 249.99,
-    rating: 4.9,
-    brand: "ProDent",
-    reviews: 234,
-  },
-  {
-    category: "Equipment",
-    id: "12",
-    image:
-      "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&auto=format&fit=crop&q=60",
-    inStock: false,
-    name: "Dental X-Ray Sensor",
-    originalPrice: 1499.99,
-    price: 1299.99,
-    rating: 4.8,
-    brand: "ProDent",
-    reviews: 67,
-  },
-];
-
-const brands = ["MK Dental", "ProDent", "DentaTech", "OrthoMax"];
-const priceRanges = [
-  { label: "Under $50", min: 0, max: 50 },
-  { label: "$50 - $100", min: 50, max: 100 },
-  { label: "$100 - $250", min: 100, max: 250 },
-  { label: "$250 - $500", min: 250, max: 500 },
-  { label: "Over $500", min: 500, max: Infinity },
-];
+interface PaginationMetadata {
+  currentPage: number;
+  totalPages: number;
+  totalProducts: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
 
 const sortOptions: { value: SortOption; label: string }[] = [
   { value: "featured", label: "Featured" },
@@ -255,20 +109,20 @@ const sortOptions: { value: SortOption; label: string }[] = [
 /*                              Component                                     */
 /* -------------------------------------------------------------------------- */
 
-export default function ProductsPage() {
-  const { addItem } = useCart();
-  const { addItem: addToWishlist, isInWishlist, removeItem: removeFromWishlist } = useWishlist();
+function ProductsContent() {
+  const { addItem, openCart } = useCart();
   const { addProduct: addToCompare, isInCompare, products: compareProducts } = useCompare();
 
-  /* ----------------------- Categories (derived) ------------------------- */
-  const categories: Category[] = React.useMemo(() => {
-    const dynamic = Array.from(new Set(products.map((p) => p.category))).sort();
-    return ["All", ...dynamic];
-  }, []);
+  /* ----------------------- State ------------------------- */
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = React.useState(true);
 
-  /* ----------------------------- State ---------------------------------- */
-  const [selectedCategory, setSelectedCategory] =
-    React.useState<Category>("All");
+  const [apiCategories, setApiCategories] = React.useState<CategoryData[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = React.useState(true);
+
+  const [selectedCategory, setSelectedCategory] = React.useState<string>("All");
+  const [selectedSubcategory, setSelectedSubcategory] = React.useState<string | null>(null);
+
   const [searchQuery, setSearchQuery] = React.useState("");
   const [sortBy, setSortBy] = React.useState<SortOption>("featured");
   const [selectedBrands, setSelectedBrands] = React.useState<string[]>([]);
@@ -280,143 +134,221 @@ export default function ProductsPage() {
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [quickViewProduct, setQuickViewProduct] = React.useState<Product | null>(null);
 
+  const [pagination, setPagination] = React.useState<PaginationMetadata | null>(null);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [pageSize] = React.useState(12);
+
+  /* ----------------------- Data Fetching ------------------------- */
+
+  // Fetch products
+  React.useEffect(() => {
+    setProductsLoading(true);
+    const params = new URLSearchParams();
+    params.set("productType", "single");
+    params.set("page", currentPage.toString());
+    params.set("limit", pageSize.toString());
+
+    if (selectedCategory !== "All") {
+      params.set("category", selectedCategory);
+    }
+    if (selectedSubcategory) {
+      params.set("subcategory", selectedSubcategory);
+    }
+    if (searchQuery.trim()) {
+      params.set("search", searchQuery.trim());
+    }
+    // Note: brand, price range, stock, and rating might not be fully supported by user API yet 
+    // but they are supported by the admin API. Assuming backend parity for these.
+    if (selectedBrands.length > 0) {
+      params.set("brand", selectedBrands.join(","));
+    }
+    if (inStockOnly) {
+      params.set("minStock", "1");
+    }
+    if (onSaleOnly) {
+      params.set("onSale", "true");
+    }
+
+    fetch(`/api/user/products?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data: any) => {
+        if (data.success && data.data) {
+          const productList = data.data.products || (Array.isArray(data.data) ? data.data : []);
+          setProducts(mapProducts(productList));
+          if (data.data.pagination) {
+            setPagination(data.data.pagination);
+          }
+        } else {
+          setProducts([]);
+          setPagination(null);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching products:", err);
+        setProducts([]);
+        setPagination(null);
+      })
+      .finally(() => setProductsLoading(false));
+  }, [currentPage, pageSize, selectedCategory, selectedSubcategory, searchQuery, selectedBrands, inStockOnly, onSaleOnly]);
+
+  // Helper to map API product to local interface
+  const mapProducts = (list: any[]): Product[] => {
+    return list.map((p: any) => ({
+      id: p._id || p.id,
+      name: p.name,
+      price: p.price,
+      discount: p.discount,
+      originalPrice: p.originalPrice || p.compareAtPrice,
+      image: resolveImageUrl(p.images?.[0] || p.image),
+      category: p.category?.name || p.category || "Uncategorized",
+      subcategory: p.subcategory,
+      brand: p.brand,
+      rating: p.ratings?.average || p.rating || 0,
+      reviews: p.ratings?.count || p.reviews || 0,
+      inStock: (p.inventory?.quantity > 0 || p.inStock !== false) && p.status !== 'inactive',
+    }));
+  };
+
+  // Fetch categories
+  React.useEffect(() => {
+    fetch("/api/user/categories")
+      .then((res) => res.json())
+      .then((data: any) => {
+        if (data.success && Array.isArray(data.data)) {
+          setApiCategories(data.data);
+        } else if (data.success && data.data?.categories) {
+          setApiCategories(data.data.categories);
+        } else {
+          setApiCategories([]);
+        }
+      })
+      .catch(() => setApiCategories([]))
+      .finally(() => setCategoriesLoading(false));
+  }, []);
+
+  /* ----------------------- Derived State ------------------------- */
+
+  const displayCategories = React.useMemo(() => {
+    return apiCategories.filter(c => c.showInMenu !== false);
+  }, [apiCategories]);
+
+  const searchParams = useSearchParams();
+  const initialCategory = searchParams.get("category");
+
+  React.useEffect(() => {
+    if (initialCategory) {
+      const decoded = decodeURIComponent(initialCategory);
+      const match = displayCategories.find(c => c.name.toLowerCase() === decoded.toLowerCase());
+      if (match) {
+        setSelectedCategory(match.name);
+      }
+    }
+  }, [initialCategory, displayCategories]);
+
   /* --------------------- Active filters count --------------------------- */
   const activeFiltersCount = React.useMemo(() => {
     let count = 0;
     if (selectedCategory !== "All") count++;
+    if (selectedSubcategory) count++;
     if (selectedBrands.length > 0) count += selectedBrands.length;
     if (priceRange[0] > 0 || priceRange[1] < 2000) count++;
     if (inStockOnly) count++;
     if (onSaleOnly) count++;
     if (minRating > 0) count++;
     return count;
-  }, [selectedCategory, selectedBrands, priceRange, inStockOnly, onSaleOnly, minRating]);
+  }, [selectedCategory, selectedSubcategory, selectedBrands, priceRange, inStockOnly, onSaleOnly, minRating]);
 
   /* --------------------- Filtered products (memo) ----------------------- */
   const filteredProducts = React.useMemo(() => {
-    let result = products;
-    
-    // Filter by category
-    if (selectedCategory !== "All") {
-      result = result.filter((p) => p.category === selectedCategory);
-    }
-    
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(query) ||
-          p.category.toLowerCase().includes(query) ||
-          p.brand?.toLowerCase().includes(query)
-      );
-    }
+    // Since we moved filtering to backend for category, search, subcategory, brand, stock, and sale
+    // We only need to handle client-side sorting and rating/price filters if they are not yet fully supported by backend.
 
-    // Filter by brand
-    if (selectedBrands.length > 0) {
-      result = result.filter((p) => p.brand && selectedBrands.includes(p.brand));
-    }
+    let result = [...products];
 
-    // Filter by price range
+    // Client-side Price range filter
     result = result.filter(
       (p) => p.price >= priceRange[0] && p.price <= priceRange[1]
     );
 
-    // Filter by stock
-    if (inStockOnly) {
-      result = result.filter((p) => p.inStock);
-    }
-
-    // Filter by sale
-    if (onSaleOnly) {
-      result = result.filter((p) => p.originalPrice && p.originalPrice > p.price);
-    }
-
-    // Filter by rating
+    // Client-side Rating filter
     if (minRating > 0) {
       result = result.filter((p) => p.rating >= minRating);
     }
 
-    // Sort
+    // Client-side Sort
     switch (sortBy) {
       case "price-low":
-        result = [...result].sort((a, b) => a.price - b.price);
+        result = result.sort((a, b) => a.price - b.price);
         break;
       case "price-high":
-        result = [...result].sort((a, b) => b.price - a.price);
+        result = result.sort((a, b) => b.price - a.price);
         break;
       case "rating":
-        result = [...result].sort((a, b) => b.rating - a.rating);
+        result = result.sort((a, b) => b.rating - a.rating);
         break;
       case "name":
-        result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+        result = result.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case "newest":
-        result = [...result].reverse();
+        // Assuming backend handles order mostly, but we can reverse if needed or just let it be
         break;
       default:
         break;
     }
-    
+
     return result;
-  }, [selectedCategory, searchQuery, sortBy, selectedBrands, priceRange, inStockOnly, onSaleOnly, minRating]);
+  }, [products, sortBy, priceRange, minRating]);
 
   /* --------------------------- Handlers --------------------------------- */
   const handleAddToCart = React.useCallback(
     (productId: string) => {
       const product = products.find((p) => p.id === productId);
       if (product) {
+        const displayPrice = (product.discount?.isActive && product.discount?.discountedPrice && product.discount.discountedPrice < product.price)
+          ? product.discount.discountedPrice
+          : product.price;
+
         addItem(
           {
             category: product.category,
             id: product.id,
             image: product.image,
             name: product.name,
-            price: product.price,
+            price: displayPrice,
           },
           1,
         );
+        openCart();
         toast.success(`${product.name} added to cart`);
       }
     },
-    [addItem],
+    [addItem, openCart, products],
   );
 
-  const handleAddToWishlist = React.useCallback((productId: string) => {
-    const product = products.find((p) => p.id === productId);
-    if (product) {
-      if (isInWishlist(productId)) {
-        removeFromWishlist(productId);
-        toast.success(`${product.name} removed from wishlist`);
-      } else {
-        addToWishlist({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          image: product.image,
-          category: product.category,
-          originalPrice: product.originalPrice,
-        });
-        toast.success(`${product.name} added to wishlist`);
-      }
-    }
-  }, [addToWishlist, removeFromWishlist, isInWishlist]);
+
 
   const handleAddToCompare = React.useCallback((productId: string) => {
     const product = products.find((p) => p.id === productId);
     if (product) {
+      const displayPrice = (product.discount?.isActive && product.discount?.discountedPrice && product.discount.discountedPrice < product.price)
+        ? product.discount.discountedPrice
+        : product.price;
+      const originalPrice = (product.discount?.isActive && product.discount?.discountedPrice && product.discount.discountedPrice < product.price)
+        ? product.price
+        : product.originalPrice;
+
       addToCompare({
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: displayPrice,
         image: product.image,
         category: product.category,
         rating: product.rating,
         inStock: product.inStock,
-        originalPrice: product.originalPrice,
+        originalPrice: originalPrice,
       });
     }
-  }, [addToCompare]);
+  }, [addToCompare, products]);
 
   const handleQuickView = React.useCallback((productId: string) => {
     const product = products.find((p) => p.id === productId);
@@ -441,47 +373,79 @@ export default function ProductsPage() {
         ? prev.filter((b) => b !== brand)
         : [...prev, brand]
     );
+    setCurrentPage(1);
   };
 
   /* ----------------------------- Filter Sidebar Content ----------------- */
   const FilterContent = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-muted p-4 rounded-lg">
       {/* Categories */}
       <div>
-        <h3 className="font-medium mb-3">Categories</h3>
+        <h3 className="font-medium mb-3">Categories 🦷 / 🔧</h3>
         <div className="space-y-2">
-          {categories.map((category) => (
-            <button
-              key={category}
-              className={`block w-full text-left px-2 py-1.5 rounded text-sm transition-colors ${
-                category === selectedCategory
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
+          <button
+            className={`block w-full text-left px-2 py-1.5 rounded text-sm transition-colors ${selectedCategory === "All"
+              ? "bg-primary text-primary-foreground"
+              : "hover:bg-muted"
               }`}
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-      </div>
+            onClick={() => {
+              setSelectedCategory("All");
+              setSelectedSubcategory(null);
+              setCurrentPage(1);
+            }}
+          >
+            All Categories
+          </button>
 
-      <Separator />
+          {displayCategories.map((category) => (
+            <div key={category.name}>
+              <button
+                className={`flex items-center w-full px-2 py-1.5 rounded text-sm transition-colors ${selectedCategory === category.name
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "hover:bg-muted"
+                  }`}
+                onClick={() => {
+                  setSelectedCategory(category.name);
+                  setSelectedSubcategory(null);
+                  setCurrentPage(1);
+                }}
+              >
+                <span className="mr-2 text-lg">{category.icon || "🦷"}</span>
+                {category.name}
+              </button>
 
-      {/* Brands */}
-      <div>
-        <h3 className="font-medium mb-3">Brands</h3>
-        <div className="space-y-2">
-          {brands.map((brand) => (
-            <div key={brand} className="flex items-center space-x-2">
-              <Checkbox
-                id={`brand-${brand}`}
-                checked={selectedBrands.includes(brand)}
-                onCheckedChange={() => toggleBrand(brand)}
-              />
-              <Label htmlFor={`brand-${brand}`} className="text-sm cursor-pointer">
-                {brand}
-              </Label>
+              {/* Render Subcategories if category matches */}
+              {/* Alternatively, always show expand logic, but simpler to show when parent selected or always if small list. 
+                    Let's show when parent selected OR allow user to see structure. 
+                    Given standard e-com patterns: show subcategories indented. 
+                */}
+              {(selectedCategory === category.name || category.subcategories?.some(s => {
+                const sName = typeof s === 'string' ? s : s.name;
+                return sName === selectedSubcategory;
+              })) && category.subcategories && category.subcategories.length > 0 && (
+                  <div className="ml-4 mt-1 border-l-2 pl-2 space-y-1">
+                    {category.subcategories.map(sub => {
+                      const subName = typeof sub === 'string' ? sub : sub.name;
+                      return (
+                        <button
+                          key={subName}
+                          className={`block w-full text-left px-2 py-1 rounded text-xs transition-colors ${selectedSubcategory === subName
+                            ? "text-primary font-medium"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCategory(category.name);
+                            setSelectedSubcategory(subName);
+                            setCurrentPage(1);
+                          }}
+                        >
+                          {subName}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
             </div>
           ))}
         </div>
@@ -504,29 +468,6 @@ export default function ProductsPage() {
             <span>{priceRange[0]} EGP</span>
             <span>{priceRange[1]} EGP</span>
           </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Rating */}
-      <div>
-        <h3 className="font-medium mb-3">Minimum Rating</h3>
-        <div className="space-y-2">
-          {[4, 3, 2, 1].map((rating) => (
-            <button
-              key={rating}
-              className={`flex items-center gap-2 w-full px-2 py-1.5 rounded text-sm transition-colors ${
-                minRating === rating
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
-              }`}
-              onClick={() => setMinRating(minRating === rating ? 0 : rating)}
-            >
-              {"★".repeat(rating)}{"☆".repeat(5 - rating)}
-              <span className="ml-1">& up</span>
-            </button>
-          ))}
         </div>
       </div>
 
@@ -570,9 +511,30 @@ export default function ProductsPage() {
     </div>
   );
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://mk-dental.com";
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": baseUrl
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Products",
+        "item": `${baseUrl}/products`
+      }
+    ]
+  };
+
   /* ----------------------------- Render --------------------------------- */
   return (
     <div className="flex min-h-screen flex-col">
+      <JsonLd data={breadcrumbJsonLd} />
       <main className="flex-1 py-6 sm:py-10">
         <div className="container px-4 sm:px-6">
           {/* Heading */}
@@ -610,7 +572,10 @@ export default function ProductsPage() {
                 type="search"
                 placeholder="Search products..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="pl-10"
               />
             </div>
@@ -755,35 +720,39 @@ export default function ProductsPage() {
             <div className="flex-1">
               {/* Product count */}
               <div className="mb-4 text-sm text-muted-foreground">
-                Showing {filteredProducts.length} of {products.length} products
+                Showing {filteredProducts.length} of {pagination?.totalProducts || products.length} products
                 {searchQuery && ` for "${searchQuery}"`}
               </div>
 
               {/* Product grid */}
-              <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 sm:gap-5"
-                    : "space-y-4"
-                }
-              >
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    onAddToCart={handleAddToCart}
-                    onAddToWishlist={handleAddToWishlist}
-                    onQuickView={handleQuickView}
-                    onAddToCompare={handleAddToCompare}
-                    isInWishlist={isInWishlist(product.id)}
-                    isInCompare={isInCompare(product.id)}
-                    product={product}
-                    viewMode={viewMode}
-                  />
-                ))}
-              </div>
+              {productsLoading ? (
+                <div className="col-span-full flex justify-center items-center py-12">
+                  <span className="text-muted-foreground">Loading products...</span>
+                </div>
+              ) : (
+                <div
+                  className={
+                    viewMode === "grid"
+                      ? "grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 sm:gap-5"
+                      : "space-y-6"
+                  }
+                >
+                  {filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      onAddToCart={handleAddToCart}
+                      onQuickView={handleQuickView}
+                      onAddToCompare={handleAddToCompare}
+                      isInCompare={isInCompare(product.id)}
+                      product={product}
+                      viewMode={viewMode}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Empty state */}
-              {filteredProducts.length === 0 && (
+              {!productsLoading && filteredProducts.length === 0 && (
                 <div className="mt-8 text-center py-12">
                   <Search className="mx-auto h-12 w-12 text-muted-foreground/50" />
                   <p className="mt-4 text-muted-foreground">
@@ -800,18 +769,30 @@ export default function ProductsPage() {
               )}
 
               {/* Pagination */}
-              {filteredProducts.length > 0 && (
+              {pagination && pagination.totalPages > 1 && (
                 <nav
                   aria-label="Pagination"
-                  className="mt-8 flex items-center justify-center gap-1 sm:mt-12 sm:gap-2"
+                  className="mt-6 flex items-center justify-center gap-1 sm:mt-8 sm:gap-2"
                 >
-                  <Button disabled variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={!pagination.hasPrev || productsLoading}
+                  >
                     Previous
                   </Button>
-                  <Button aria-current="page" variant="default" size="sm">
-                    1
-                  </Button>
-                  <Button disabled variant="outline" size="sm">
+
+                  <div className="flex items-center px-2 text-sm font-medium text-muted-foreground">
+                    Page {pagination.currentPage} of {pagination.totalPages}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                    disabled={!pagination.hasNext || productsLoading}
+                  >
                     Next
                   </Button>
                 </nav>
@@ -824,11 +805,25 @@ export default function ProductsPage() {
       {/* Quick View Modal */}
       {quickViewProduct && (
         <QuickViewModal
-          product={quickViewProduct}
-          open={!!quickViewProduct}
-          onOpenChange={(open) => !open && setQuickViewProduct(null)}
+          product={{
+            ...quickViewProduct,
+            _id: quickViewProduct.id,
+            images: [quickViewProduct.image],
+            price: quickViewProduct.price,
+            description: "Product description..." // You might want to fetch full details or use available
+          }}
+          isOpen={!!quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
         />
       )}
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto py-12 text-center text-muted-foreground">Loading products...</div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }

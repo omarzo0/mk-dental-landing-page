@@ -2,7 +2,7 @@
 
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 
@@ -18,19 +18,55 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const { login, isAuthenticated, isAdmin } = useAuth();
+  const { login, isAuthenticated, isAdmin, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Redirect if already authenticated
+  // Show session expired message
   React.useEffect(() => {
-    if (isAuthenticated) {
-      if (isAdmin) {
-        router.push("/admin");
+    if (searchParams.get("expired") === "true") {
+      toast.error("Your session has expired. Please log in again.");
+    }
+  }, [searchParams]);
+
+  // Redirect if already authenticated (only after auth is loaded)
+  React.useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      // Check for callback URL to redirect back to original page
+      const callbackUrl = searchParams.get("callbackUrl");
+      if (callbackUrl) {
+        router.replace(decodeURIComponent(callbackUrl));
+      } else if (isAdmin) {
+        router.replace("/admin");
       } else {
-        router.push("/");
+        router.replace("/");
       }
     }
-  }, [isAuthenticated, isAdmin, router]);
+  }, [isAuthenticated, isAdmin, authLoading, router, searchParams]);
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="container mx-auto flex min-h-[calc(100vh-200px)] items-center justify-center px-4 py-8 sm:py-12">
+        <div className="animate-pulse space-y-4 text-center">
+          <div className="h-8 w-8 mx-auto rounded-full bg-muted" />
+          <div className="h-4 w-24 mx-auto bg-muted rounded" />
+        </div>
+      </div>
+    );
+  }
+
+  // Don't show login form if already authenticated (will redirect via useEffect)
+  if (isAuthenticated) {
+    return (
+      <div className="container mx-auto flex min-h-[calc(100vh-200px)] items-center justify-center px-4 py-8 sm:py-12">
+        <div className="animate-pulse space-y-4 text-center">
+          <div className="h-8 w-8 mx-auto rounded-full bg-muted" />
+          <p className="text-sm text-muted-foreground">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,12 +188,6 @@ export default function LoginPage() {
               Continue with Google
             </Button>
           </div>
-          <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline">
-              Sign up
-            </Link>
-          </p>
         </CardFooter>
       </Card>
     </div>

@@ -22,6 +22,7 @@ import { toast } from "sonner";
 
 import { useAuth } from "~/lib/hooks/use-auth";
 import { useCart } from "~/lib/hooks/use-cart";
+import { resolveImageUrl } from "~/lib/image-utils";
 import { Button } from "~/ui/primitives/button";
 import {
   Card,
@@ -35,64 +36,21 @@ import { Input } from "~/ui/primitives/input";
 import { Label } from "~/ui/primitives/label";
 import { Separator } from "~/ui/primitives/separator";
 import { Badge } from "~/ui/primitives/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/ui/primitives/select";
+import { Textarea } from "~/ui/primitives/textarea";
 
-// Available coupons for demo
-const validCoupons: Record<string, { discount: number; type: "percentage" | "fixed"; minOrder?: number }> = {
-  SAVE10: { discount: 10, type: "percentage" },
-  DENTAL20: { discount: 20, type: "percentage", minOrder: 100 },
-  FLAT50: { discount: 50, type: "fixed", minOrder: 200 },
-  FREESHIP: { discount: 0, type: "fixed" },
-  WELCOME15: { discount: 15, type: "percentage" },
-};
+// Mock data removed in favor of real API integration
 
-// Shipping options
-const shippingOptions = [
-  {
-    id: "standard",
-    name: "Standard Shipping",
-    description: "5-7 business days",
-    price: 9.99,
-    freeThreshold: 100,
-  },
-  {
-    id: "express",
-    name: "Express Shipping",
-    description: "2-3 business days",
-    price: 19.99,
-    freeThreshold: null,
-  },
-  {
-    id: "overnight",
-    name: "Overnight Shipping",
-    description: "Next business day",
-    price: 39.99,
-    freeThreshold: null,
-  },
-];
+// Saved addresses for logged in users (removed as per user request)
+const savedAddresses: any[] = [];
 
-// Saved addresses for logged in users
-const savedAddresses = [
-  {
-    id: "1",
-    name: "Dr. John Smith",
-    street: "123 Main Street, Suite 100",
-    city: "New York",
-    state: "NY",
-    zip: "10001",
-    isDefault: true,
-  },
-  {
-    id: "2",
-    name: "Smith Dental Clinic",
-    street: "456 Oak Avenue",
-    city: "Brooklyn",
-    state: "NY",
-    zip: "11201",
-    isDefault: false,
-  },
-];
-
-type CheckoutStep = "information" | "shipping" | "payment" | "review";
+type CheckoutStep = "information" | "payment" | "review";
 
 interface FormData {
   email: string;
@@ -106,6 +64,9 @@ interface FormData {
   state: string;
   zip: string;
   country: string;
+  gender: string;
+  dateOfBirth: string;
+  notes: string;
   saveAddress: boolean;
   cardNumber: string;
   cardName: string;
@@ -122,17 +83,69 @@ export default function CheckoutPage() {
 
   const [currentStep, setCurrentStep] = React.useState<CheckoutStep>("information");
   const [isProcessing, setIsProcessing] = React.useState(false);
-  const [selectedAddress, setSelectedAddress] = React.useState<string | null>(
-    isAuthenticated ? "1" : null
-  );
   const [selectedShipping, setSelectedShipping] = React.useState("standard");
   const [couponCode, setCouponCode] = React.useState("");
   const [appliedCoupon, setAppliedCoupon] = React.useState<{
     code: string;
     discount: number;
     type: "percentage" | "fixed";
+    freeShipping?: boolean;
   } | null>(null);
   const [couponError, setCouponError] = React.useState("");
+  const [isValidatingCoupon, setIsValidatingCoupon] = React.useState(false);
+  const [publicCoupons, setPublicCoupons] = React.useState<any[]>([]);
+  const [isLoadingCoupons, setIsLoadingCoupons] = React.useState(false);
+
+  const [shippingFees, setShippingFees] = React.useState<{ id: string; name: string; fee: number }[]>([]);
+  const [selectedShippingFee, setSelectedShippingFee] = React.useState(0);
+
+  React.useEffect(() => {
+    const fetchShippingFees = async () => {
+      console.log("Fetching shipping fees...");
+      try {
+        const response = await fetch("/api/user/shipping-fees");
+        console.log("Shipping fees response status:", response.status);
+        const data = await response.json() as { success: boolean; data: { id: string; name: string; fee: number }[] };
+        console.log("Shipping fees data received:", data);
+        if (data.success) {
+          // Handle both direct array and nested shippingFees structure
+          const feesData = data.data as any;
+          const fees = Array.isArray(feesData)
+            ? feesData
+            : (feesData && Array.isArray(feesData.shippingFees) ? feesData.shippingFees : []);
+
+          const normalizedFees = fees.map((f: any) => ({
+            ...f,
+            id: f.id || f._id // Fallback to _id if id is missing
+          }));
+
+          setShippingFees(normalizedFees);
+        } else {
+          console.error("Shipping fees API returned success: false or invalid data structure");
+          setShippingFees([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch shipping fees:", error);
+      }
+    };
+    fetchShippingFees();
+
+    const fetchPublicCoupons = async () => {
+      setIsLoadingCoupons(true);
+      try {
+        const response = await fetch("/api/user/coupons");
+        const data = await response.json() as any;
+        if (data.success && Array.isArray(data.data)) {
+          setPublicCoupons(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch public coupons:", error);
+      } finally {
+        setIsLoadingCoupons(false);
+      }
+    };
+    fetchPublicCoupons();
+  }, []);
 
   const [formData, setFormData] = React.useState<FormData>({
     email: user?.email || "",
@@ -145,7 +158,10 @@ export default function CheckoutPage() {
     city: "",
     state: "",
     zip: "",
-    country: "USA",
+    country: "Egypt",
+    gender: "male",
+    dateOfBirth: "1990-01-01",
+    notes: "",
     saveAddress: false,
     cardNumber: "",
     cardName: "",
@@ -157,35 +173,27 @@ export default function CheckoutPage() {
 
   const steps: { id: CheckoutStep; label: string; icon: React.ReactNode }[] = [
     { id: "information", label: "Information", icon: <User className="h-4 w-4" /> },
-    { id: "shipping", label: "Shipping", icon: <Truck className="h-4 w-4" /> },
     { id: "payment", label: "Payment", icon: <CreditCard className="h-4 w-4" /> },
     { id: "review", label: "Review", icon: <Package className="h-4 w-4" /> },
   ];
 
-  const stepOrder: CheckoutStep[] = ["information", "shipping", "payment", "review"];
+  const stepOrder: CheckoutStep[] = ["information", "payment", "review"];
   const currentStepIndex = stepOrder.indexOf(currentStep);
 
-  const shippingCost = React.useMemo(() => {
-    const option = shippingOptions.find((o) => o.id === selectedShipping);
-    if (!option) return 0;
-    if (appliedCoupon?.code === "FREESHIP") return 0;
-    if (option.freeThreshold && subtotal >= option.freeThreshold) return 0;
-    return option.price;
-  }, [selectedShipping, subtotal, appliedCoupon]);
+  const shippingCost = appliedCoupon?.freeShipping ? 0 : selectedShippingFee;
 
   const discountAmount = React.useMemo(() => {
     if (!appliedCoupon) return 0;
-    if (appliedCoupon.code === "FREESHIP") return 0;
     if (appliedCoupon.type === "percentage") {
       return (subtotal * appliedCoupon.discount) / 100;
     }
     return appliedCoupon.discount;
   }, [appliedCoupon, subtotal]);
 
-  const taxAmount = (subtotal - discountAmount) * 0.08;
+  const taxAmount = (subtotal - discountAmount) * 0; // Tax 0 as per simplified UI
   const total = subtotal - discountAmount + shippingCost + taxAmount;
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     const code = couponCode.toUpperCase().trim();
     setCouponError("");
 
@@ -194,20 +202,53 @@ export default function CheckoutPage() {
       return;
     }
 
-    const coupon = validCoupons[code];
-    if (!coupon) {
-      setCouponError("Invalid coupon code");
-      return;
-    }
+    setIsValidatingCoupon(true);
+    try {
+      const response = await fetch("/api/user/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          totalPrice: subtotal,
+          items: items.map((item) => ({
+            productId: item.id,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+          email: formData.email,
+        }),
+      });
 
-    if (coupon.minOrder && subtotal < coupon.minOrder) {
-      setCouponError(`Minimum order of $${coupon.minOrder} required`);
-      return;
-    }
+      const data = await response.json() as {
+        success: boolean;
+        message?: string;
+        data: {
+          code: string;
+          discount: number;
+          type: "percentage" | "fixed";
+          freeShipping?: boolean;
+          message?: string;
+        }
+      };
 
-    setAppliedCoupon({ code, ...coupon });
-    setCouponCode("");
-    toast.success(`Coupon "${code}" applied successfully!`);
+      if (data.success) {
+        setAppliedCoupon({
+          code: data.data.code,
+          discount: data.data.discount,
+          type: data.data.type,
+          freeShipping: data.data.freeShipping,
+        });
+        setCouponCode("");
+        toast.success(data.data.message || `Coupon "${code}" applied!`);
+      } else {
+        setCouponError(data.message || "Invalid coupon code");
+      }
+    } catch (error) {
+      console.error("Coupon validation failed:", error);
+      setCouponError("Failed to validate coupon. Please try again.");
+    } finally {
+      setIsValidatingCoupon(false);
+    }
   };
 
   const handleRemoveCoupon = () => {
@@ -231,853 +272,657 @@ export default function CheckoutPage() {
 
   const handleSubmitOrder = async () => {
     setIsProcessing(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    clearCart();
-    setIsProcessing(false);
-    router.push("/checkout/confirmation?orderId=ORD-" + Date.now().toString().slice(-6));
+
+    // Filter out items with invalid product IDs (must be non-empty string, valid MongoDB ObjectId format)
+    const validItems = items.filter(item => {
+      const id = item.id;
+      // Check for valid MongoDB ObjectId format (24 hex characters)
+      return id && typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id);
+    });
+
+    if (validItems.length === 0) {
+      toast.error("No valid items in cart. Please add products again.");
+      setIsProcessing(false);
+      return;
+    }
+
+    if (validItems.length !== items.length) {
+      console.warn("Some items have invalid IDs and were filtered out:",
+        items.filter(item => !validItems.includes(item))
+      );
+    }
+
+    const orderPayload = {
+      customerInfo: {
+        email: formData.email,
+        firstName: formData.firstName || user?.name?.split(" ")[0] || "Guest",
+        lastName: formData.lastName || user?.name?.split(" ")[1] || "User",
+        phone: formData.phone,
+        gender: formData.gender,
+        dateOfBirth: formData.dateOfBirth
+      },
+      items: validItems.map(item => ({
+        productId: item.id,
+        quantity: item.quantity
+      })),
+      shippingAddress: {
+        street: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zip,
+        country: formData.country
+      },
+      paymentMethod: "cod",
+      notes: formData.notes,
+      ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {})
+    };
+
+    console.log("Submitting order payload:", JSON.stringify(orderPayload, null, 2));
+
+    try {
+      const response = await fetch("/api/user/orders/guest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+
+      const data = await response.json() as {
+        success: boolean;
+        message?: string;
+        data?: {
+          order: { orderNumber: string; _id: string };
+          payment: { id: string };
+        };
+      };
+
+      if (!response.ok || !data.success) {
+        toast.error(data.message || "Failed to create order");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Store order details for confirmation page
+      const orderConfirmationData = {
+        orderNumber: data.data?.order?.orderNumber,
+        email: formData.email,
+        items: validItems.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          image: resolveImageUrl(item.image)
+        })),
+        subtotal: subtotal,
+        shipping: shippingCost,
+        discount: discountAmount,
+        couponCode: appliedCoupon?.code || null,
+        total: total,
+        shippingAddress: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          street: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zip,
+          country: formData.country
+        }
+      };
+
+      // Save to sessionStorage for confirmation page
+      sessionStorage.setItem('orderConfirmation', JSON.stringify(orderConfirmationData));
+
+      // Clear cart and redirect to payment page
+      clearCart();
+
+      const orderNumber = data.data?.order?.orderNumber;
+      const email = encodeURIComponent(formData.email);
+
+      // Skip payment processing for COD orders to prevent automatic "completed" status
+      if (formData.billingAddress === "same" || true) { // We are currently hardcoded to "cod" as per line 307
+        router.push(`/checkout/confirmation?orderId=${orderNumber || data.data?.order?._id}`);
+      } else {
+        const paymentId = data.data?.payment?.id;
+        if (paymentId && orderNumber) {
+          router.push(`/checkout/payment?paymentId=${paymentId}&orderNumber=${orderNumber}&email=${email}`);
+        } else {
+          router.push(`/checkout/confirmation?orderId=${orderNumber || data.data?.order?._id}`);
+        }
+      }
+
+      toast.success("Order created successfully!");
+    } catch (error) {
+      console.error("Order submission failed:", error);
+      toast.error("Failed to place order. Please try again.");
+      setIsProcessing(false);
+    }
   };
 
   if (items.length === 0) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-16 text-center">
-        <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-        <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
-        <p className="text-muted-foreground mb-8">
-          Add some items to your cart before checking out.
-        </p>
+      <div className="container mx-auto px-4 py-20 text-center">
+        <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
         <Button asChild>
-          <Link href="/products">Browse Products</Link>
+          <Link href="/products">Go Shopping</Link>
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8">
-      <Link
-        href="/products"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Continue Shopping
-      </Link>
-
-      {/* Progress Steps */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => (
-            <React.Fragment key={step.id}>
-              <div
-                className={`flex items-center gap-2 ${
-                  index <= currentStepIndex
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${
-                    index < currentStepIndex
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : index === currentStepIndex
-                      ? "border-primary text-primary"
-                      : "border-muted-foreground"
-                  }`}
-                >
-                  {index < currentStepIndex ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    step.icon
+    <div className="min-h-screen bg-background pb-20 pt-8 sm:pt-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Progress Stepper */}
+        <div className="mb-8 overflow-x-auto">
+          <div className="flex min-w-[600px] items-center justify-between sm:min-w-0 sm:justify-center sm:gap-12">
+            {steps.map((step, index) => {
+              const active = currentStep === step.id;
+              const completed = stepOrder.indexOf(currentStep) > index;
+              return (
+                <div key={`${step.id}-${index}`} className="flex items-center gap-2">
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${active
+                      ? "bg-primary text-primary-foreground"
+                      : completed
+                        ? "bg-primary/20 text-primary"
+                        : "bg-muted text-muted-foreground"
+                      }`}
+                  >
+                    {completed ? <Check className="h-4 w-4" /> : index + 1}
+                  </div>
+                  <span
+                    className={`text-sm font-medium ${active ? "text-foreground" : "text-muted-foreground"
+                      }`}
+                  >
+                    {step.label}
+                  </span>
+                  {index < steps.length - 1 && (
+                    <div className="h-px w-8 bg-muted sm:w-12" />
                   )}
                 </div>
-                <span className="hidden sm:inline font-medium">{step.label}</span>
-              </div>
-              {index < steps.length - 1 && (
-                <div
-                  className={`flex-1 h-0.5 mx-4 ${
-                    index < currentStepIndex ? "bg-primary" : "bg-muted"
-                  }`}
-                />
-              )}
-            </React.Fragment>
-          ))}
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Main Form Area */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Guest Checkout Option */}
-          {!isAuthenticated && currentStep === "information" && (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Have an account?</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Sign in for a faster checkout experience
-                    </p>
-                  </div>
-                  <Button variant="outline" asChild>
-                    <Link href="/login?redirect=/checkout">Sign In</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 1: Information */}
-          {currentStep === "information" && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
-                  <CardDescription>
-                    We'll use this to send you order updates
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      placeholder="john@example.com"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      placeholder="+1 (555) 000-0000"
-                      required
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Shipping Address</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {isAuthenticated && savedAddresses.length > 0 && (
-                    <div className="space-y-3">
-                      <Label>Select a saved address</Label>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* Main Form Area */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Step 1: Information */}
+            {currentStep === "information" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Contact & Personal Information</CardTitle>
+                    <CardDescription>
+                      Tell us a bit about yourself for order verification
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        {savedAddresses.map((addr) => (
-                          <div
-                            key={addr.id}
-                            className={`flex items-start space-x-3 rounded-lg border p-4 cursor-pointer ${
-                              selectedAddress === addr.id
-                                ? "border-primary bg-primary/5"
-                                : ""
-                            }`}
-                            onClick={() => setSelectedAddress(addr.id)}
-                          >
-                            <input
-                              type="radio"
-                              checked={selectedAddress === addr.id}
-                              onChange={() => setSelectedAddress(addr.id)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{addr.name}</span>
-                                {addr.isDefault && (
-                                  <Badge variant="secondary">Default</Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {addr.street}
-                                <br />
-                                {addr.city}, {addr.state} {addr.zip}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                        <div
-                          className={`flex items-center space-x-3 rounded-lg border p-4 cursor-pointer ${
-                            selectedAddress === null
-                              ? "border-primary bg-primary/5"
-                              : ""
-                          }`}
-                          onClick={() => setSelectedAddress(null)}
-                        >
-                          <input
-                            type="radio"
-                            checked={selectedAddress === null}
-                            onChange={() => setSelectedAddress(null)}
-                          />
-                          <span>Use a different address</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {(!isAuthenticated || selectedAddress === null) && (
-                    <div className="space-y-4">
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="firstName">First Name</Label>
-                          <Input
-                            id="firstName"
-                            value={formData.firstName}
-                            onChange={(e) =>
-                              setFormData({ ...formData, firstName: e.target.value })
-                            }
-                            placeholder="John"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="lastName">Last Name</Label>
-                          <Input
-                            id="lastName"
-                            value={formData.lastName}
-                            onChange={(e) =>
-                              setFormData({ ...formData, lastName: e.target.value })
-                            }
-                            placeholder="Doe"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="company">Company/Clinic (Optional)</Label>
+                        <Label htmlFor="email">Email Address</Label>
                         <Input
-                          id="company"
-                          value={formData.company}
+                          id="email"
+                          type="email"
+                          value={formData.email}
                           onChange={(e) =>
-                            setFormData({ ...formData, company: e.target.value })
+                            setFormData({ ...formData, email: e.target.value })
                           }
-                          placeholder="ABC Dental Clinic"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="address">Street Address</Label>
-                        <Input
-                          id="address"
-                          value={formData.address}
-                          onChange={(e) =>
-                            setFormData({ ...formData, address: e.target.value })
-                          }
-                          placeholder="123 Main Street"
+                          placeholder="john@example.com"
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="apartment">
-                          Apartment, Suite, etc. (Optional)
-                        </Label>
+                        <Label htmlFor="phone">Phone Number</Label>
                         <Input
-                          id="apartment"
-                          value={formData.apartment}
+                          id="phone"
+                          type="tel"
+                          value={formData.phone}
                           onChange={(e) =>
-                            setFormData({ ...formData, apartment: e.target.value })
+                            setFormData({ ...formData, phone: e.target.value })
                           }
-                          placeholder="Suite 100"
+                          placeholder="+20 100 000 0000"
+                          required
                         />
                       </div>
-                      <div className="grid gap-4 sm:grid-cols-3">
-                        <div className="space-y-2">
-                          <Label htmlFor="city">City</Label>
-                          <Input
-                            id="city"
-                            value={formData.city}
-                            onChange={(e) =>
-                              setFormData({ ...formData, city: e.target.value })
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="gender">Gender</Label>
+                        <Select
+                          value={formData.gender}
+                          onValueChange={(value) =>
+                            setFormData({ ...formData, gender: value })
+                          }
+                        >
+                          <SelectTrigger id="gender">
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dob">Date of Birth</Label>
+                        <Input
+                          id="dob"
+                          type="date"
+                          value={formData.dateOfBirth}
+                          onChange={(e) =>
+                            setFormData({ ...formData, dateOfBirth: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Shipping Address</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                          id="firstName"
+                          value={formData.firstName}
+                          onChange={(e) =>
+                            setFormData({ ...formData, firstName: e.target.value })
+                          }
+                          placeholder="First Name"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          value={formData.lastName}
+                          onChange={(e) =>
+                            setFormData({ ...formData, lastName: e.target.value })
+                          }
+                          placeholder="Last Name"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Street Address</Label>
+                      <Input
+                        id="address"
+                        value={formData.address}
+                        onChange={(e) =>
+                          setFormData({ ...formData, address: e.target.value })
+                        }
+                        placeholder="Street name, building number"
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City</Label>
+                        <Input
+                          id="city"
+                          value={formData.city}
+                          onChange={(e) =>
+                            setFormData({ ...formData, city: e.target.value })
+                          }
+                          placeholder="City"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="state">State / Governorate</Label>
+                        <Select
+                          value={formData.state}
+                          onValueChange={(value) => {
+                            const selected = shippingFees.find(f => f.name === value);
+                            setFormData({ ...formData, state: value });
+                            if (selected) {
+                              setSelectedShippingFee(selected.fee);
                             }
-                            placeholder="New York"
-                            required
-                          />
+                          }}
+                        >
+                          <SelectTrigger id="state">
+                            <SelectValue placeholder="Select state" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.isArray(shippingFees) && shippingFees.map((fee, index) => (
+                              <SelectItem key={`${fee.id}-${index}`} value={fee.name}>
+                                {fee.name} (+{fee.fee} EGP)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="zip">ZIP Code</Label>
+                        <Input
+                          id="zip"
+                          value={formData.zip}
+                          onChange={(e) =>
+                            setFormData({ ...formData, zip: e.target.value })
+                          }
+                          placeholder="ZIP"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Country</Label>
+                      <Select
+                        value={formData.country}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, country: value })
+                        }
+                      >
+                        <SelectTrigger id="country">
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Egypt">Egypt</SelectItem>
+                          <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
+                          <SelectItem value="UAE">UAE</SelectItem>
+                          <SelectItem value="International">International</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="notes">Order Notes (Optional)</Label>
+                      <Textarea
+                        id="notes"
+                        value={formData.notes}
+                        onChange={(e) =>
+                          setFormData({ ...formData, notes: e.target.value })
+                        }
+                        placeholder="Special instructions for delivery..."
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="flex justify-end">
+                  <Button onClick={goToNextStep}>
+                    Continue to Payment
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Payment (Simplified for COD) */}
+            {currentStep === "payment" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Truck className="h-5 w-5" />
+                      Payment Method
+                    </CardTitle>
+                    <CardDescription>
+                      Currently only Cash on Delivery (COD) is supported
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="rounded-lg border-2 border-primary bg-primary/5 p-4 flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <Check className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">Cash on Delivery</h4>
+                        <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="flex justify-between">
+                  <Button variant="ghost" onClick={goToPreviousStep}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                  </Button>
+                  <Button onClick={goToNextStep}>
+                    Review Order
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Review */}
+            {currentStep === "review" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Review Your Order</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid gap-6 sm:grid-cols-2">
+                      <div>
+                        <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Shipping Information</h4>
+                        <p className="text-sm">
+                          {formData.firstName} {formData.lastName}<br />
+                          {formData.address}<br />
+                          {formData.city}, {formData.state} {formData.zip}<br />
+                          {formData.country}
+                        </p>
+                        <Button variant="link" size="sm" className="h-auto p-0 mt-2" onClick={() => setCurrentStep("information")}>Edit</Button>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Contact Information</h4>
+                        <p className="text-sm">
+                          {formData.email}<br />
+                          {formData.phone}<br />
+                          {formData.gender} ({formData.dateOfBirth})
+                        </p>
+                        <Button variant="link" size="sm" className="h-auto p-0 mt-2" onClick={() => setCurrentStep("information")}>Edit</Button>
+                      </div>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Payment Method</h4>
+                      <p className="text-sm">Cash on Delivery (COD)</p>
+                    </div>
+                    {formData.notes && (
+                      <>
+                        <Separator />
+                        <div>
+                          <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Order Notes</h4>
+                          <p className="text-sm italic">"{formData.notes}"</p>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="state">State</Label>
-                          <Input
-                            id="state"
-                            value={formData.state}
-                            onChange={(e) =>
-                              setFormData({ ...formData, state: e.target.value })
-                            }
-                            placeholder="NY"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="zip">ZIP Code</Label>
-                          <Input
-                            id="zip"
-                            value={formData.zip}
-                            onChange={(e) =>
-                              setFormData({ ...formData, zip: e.target.value })
-                            }
-                            placeholder="10001"
-                            required
-                          />
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <div className="flex justify-between">
+                  <Button variant="ghost" onClick={goToPreviousStep}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                  </Button>
+                  <Button size="lg" className="px-8" onClick={handleSubmitOrder} disabled={isProcessing}>
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Placing Order...
+                      </>
+                    ) : (
+                      "Place Order"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Order Summary Sidebar */}
+          <div>
+            <Card className="sticky top-8">
+              <CardHeader>
+                <CardTitle>Order Summary</CardTitle>
+                <CardDescription>
+                  {items.length} {items.length === 1 ? "item" : "items"} in your cart
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="max-h-60 overflow-y-auto space-y-3">
+                  {items.map((item, index) => (
+                    <div key={`${item.id}-${index}`} className="flex gap-3">
+                      <div className="relative h-12 w-12 overflow-hidden rounded-md bg-muted flex-shrink-0">
+                        <Image
+                          src={resolveImageUrl(item.image)}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                          {item.quantity}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm truncate">{item.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {item.price.toFixed(2)} EGP each
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label htmlFor="coupon" className="text-sm">
+                    Coupon Code
+                  </Label>
+                  {appliedCoupon ? (
+                    <div className="mt-2 flex items-center justify-between rounded-md border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900 p-2">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-600">
+                          {appliedCoupon.code}
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {appliedCoupon.freeShipping && (
+                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30">
+                              Free Shipping
+                            </Badge>
+                          )}
+                          {appliedCoupon.discount > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              {appliedCoupon.type === "percentage"
+                                ? `${appliedCoupon.discount}% off`
+                                : `${appliedCoupon.discount} EGP off`}
+                            </Badge>
+                          )}
                         </div>
                       </div>
-                      {isAuthenticated && (
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="saveAddress"
-                            checked={formData.saveAddress}
-                            onCheckedChange={(checked) =>
-                              setFormData({
-                                ...formData,
-                                saveAddress: checked as boolean,
-                              })
-                            }
-                          />
-                          <Label htmlFor="saveAddress" className="text-sm">
-                            Save this address for future orders
-                          </Label>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-end">
-                <Button onClick={goToNextStep}>
-                  Continue to Shipping
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Shipping */}
-          {currentStep === "shipping" && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Shipping Method</CardTitle>
-                  <CardDescription>
-                    Choose how you want your order delivered
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {shippingOptions.map((option) => {
-                      const isFree =
-                        appliedCoupon?.code === "FREESHIP" ||
-                        (option.freeThreshold && subtotal >= option.freeThreshold);
-                      return (
-                        <div
-                          key={option.id}
-                          className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer ${
-                            selectedShipping === option.id
-                              ? "border-primary bg-primary/5"
-                              : ""
-                          }`}
-                          onClick={() => setSelectedShipping(option.id)}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="radio"
-                              checked={selectedShipping === option.id}
-                              onChange={() => setSelectedShipping(option.id)}
-                            />
-                            <div>
-                              <span className="font-medium">{option.name}</span>
-                              <p className="text-sm text-muted-foreground">
-                                {option.description}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            {isFree ? (
-                              <div>
-                                <span className="font-medium text-green-600">
-                                  FREE
-                                </span>
-                                {option.price > 0 && (
-                                  <span className="text-sm text-muted-foreground line-through ml-2">
-                                    {option.price.toFixed(2)} EGP
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="font-medium">
-                                {option.price.toFixed(2)} EGP
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {subtotal < 100 && (
-                    <div className="mt-4 rounded-lg bg-muted/50 p-3 text-sm">
-                      <p>
-                        Add{" "}
-                        <span className="font-medium">
-                          {(100 - subtotal).toFixed(2)} EGP
-                        </span>{" "}
-                        more to qualify for free standard shipping!
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-between">
-                <Button variant="outline" onClick={goToPreviousStep}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back
-                </Button>
-                <Button onClick={goToNextStep}>
-                  Continue to Payment
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Payment */}
-          {currentStep === "payment" && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    Payment Information
-                  </CardTitle>
-                  <CardDescription>
-                    Your payment information is secure and encrypted
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cardName">Name on Card</Label>
-                    <Input
-                      id="cardName"
-                      value={formData.cardName}
-                      onChange={(e) =>
-                        setFormData({ ...formData, cardName: e.target.value })
-                      }
-                      placeholder="John Doe"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cardNumber">Card Number</Label>
-                    <Input
-                      id="cardNumber"
-                      value={formData.cardNumber}
-                      onChange={(e) =>
-                        setFormData({ ...formData, cardNumber: e.target.value })
-                      }
-                      placeholder="4242 4242 4242 4242"
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="expiry">Expiry Date</Label>
-                      <Input
-                        id="expiry"
-                        value={formData.expiry}
-                        onChange={(e) =>
-                          setFormData({ ...formData, expiry: e.target.value })
-                        }
-                        placeholder="MM/YY"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cvc">CVC</Label>
-                      <Input
-                        id="cvc"
-                        value={formData.cvc}
-                        onChange={(e) =>
-                          setFormData({ ...formData, cvc: e.target.value })
-                        }
-                        placeholder="123"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Lock className="h-4 w-4" />
-                    Your payment information is secure and encrypted
-                  </div>
-
-                  {isAuthenticated && (
-                    <div className="flex items-center space-x-2 pt-2">
-                      <Checkbox
-                        id="savePayment"
-                        checked={formData.savePayment}
-                        onCheckedChange={(checked) =>
-                          setFormData({
-                            ...formData,
-                            savePayment: checked as boolean,
-                          })
-                        }
-                      />
-                      <Label htmlFor="savePayment" className="text-sm">
-                        Save this card for future purchases
-                      </Label>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Billing Address</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="radio"
-                        id="billing-same"
-                        checked={formData.billingAddress === "same"}
-                        onChange={() =>
-                          setFormData({ ...formData, billingAddress: "same" })
-                        }
-                      />
-                      <Label htmlFor="billing-same" className="cursor-pointer">
-                        Same as shipping address
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="radio"
-                        id="billing-different"
-                        checked={formData.billingAddress === "different"}
-                        onChange={() =>
-                          setFormData({ ...formData, billingAddress: "different" })
-                        }
-                      />
-                      <Label htmlFor="billing-different" className="cursor-pointer">
-                        Use a different billing address
-                      </Label>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-between">
-                <Button variant="outline" onClick={goToPreviousStep}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back
-                </Button>
-                <Button onClick={goToNextStep}>
-                  Review Order
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Review */}
-          {currentStep === "review" && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Review Your Order</CardTitle>
-                  <CardDescription>
-                    Please review your order before placing it
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-medium mb-3">Order Items</h4>
-                    <div className="space-y-3">
-                      {items.map((item) => (
-                        <div key={item.id} className="flex gap-4">
-                          <div className="relative h-16 w-16 overflow-hidden rounded-md bg-muted">
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <h5 className="font-medium text-sm">{item.name}</h5>
-                            <p className="text-sm text-muted-foreground">
-                              Qty: {item.quantity}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium">
-                              {(item.price * item.quantity).toFixed(2)} EGP
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div>
-                      <h4 className="font-medium mb-2 flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        Shipping Address
-                      </h4>
-                      {selectedAddress ? (
-                        <p className="text-sm text-muted-foreground">
-                          {savedAddresses.find((a) => a.id === selectedAddress)?.name}
-                          <br />
-                          {savedAddresses.find((a) => a.id === selectedAddress)?.street}
-                          <br />
-                          {savedAddresses.find((a) => a.id === selectedAddress)?.city},{" "}
-                          {savedAddresses.find((a) => a.id === selectedAddress)?.state}{" "}
-                          {savedAddresses.find((a) => a.id === selectedAddress)?.zip}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          {formData.firstName} {formData.lastName}
-                          <br />
-                          {formData.address}
-                          {formData.apartment && `, ${formData.apartment}`}
-                          <br />
-                          {formData.city}, {formData.state} {formData.zip}
-                        </p>
-                      )}
                       <Button
-                        variant="link"
-                        className="h-auto p-0 mt-1"
-                        onClick={() => setCurrentStep("information")}
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={handleRemoveCoupon}
                       >
-                        Edit
+                        <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    <div>
-                      <h4 className="font-medium mb-2 flex items-center gap-2">
-                        <Truck className="h-4 w-4" />
-                        Shipping Method
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        {shippingOptions.find((o) => o.id === selectedShipping)?.name}
-                        <br />
-                        {shippingOptions.find((o) => o.id === selectedShipping)?.description}
-                      </p>
-                      <Button
-                        variant="link"
-                        className="h-auto p-0 mt-1"
-                        onClick={() => setCurrentStep("shipping")}
-                      >
-                        Edit
-                      </Button>
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2 flex items-center gap-2">
-                        <CreditCard className="h-4 w-4" />
-                        Payment Method
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Card ending in {formData.cardNumber.slice(-4) || "****"}
-                      </p>
-                      <Button
-                        variant="link"
-                        className="h-auto p-0 mt-1"
-                        onClick={() => setCurrentStep("payment")}
-                      >
-                        Edit
-                      </Button>
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2 flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Contact
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        {formData.email}
-                        <br />
-                        {formData.phone}
-                      </p>
-                      <Button
-                        variant="link"
-                        className="h-auto p-0 mt-1"
-                        onClick={() => setCurrentStep("information")}
-                      >
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-between">
-                <Button variant="outline" onClick={goToPreviousStep}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back
-                </Button>
-                <Button size="lg" onClick={handleSubmitOrder} disabled={isProcessing}>
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
                   ) : (
-                    <>
-                      <Lock className="mr-2 h-4 w-4" />
-                      Place Order - {total.toFixed(2)} EGP
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Order Summary Sidebar */}
-        <div>
-          <Card className="sticky top-8">
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
-              <CardDescription>
-                {items.length} {items.length === 1 ? "item" : "items"} in your cart
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="max-h-60 overflow-y-auto space-y-3">
-                {items.map((item) => (
-                  <div key={item.id} className="flex gap-3">
-                    <div className="relative h-12 w-12 overflow-hidden rounded-md bg-muted flex-shrink-0">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
+                    <div className="mt-2 flex gap-2">
+                      <Input
+                        id="coupon"
+                        value={couponCode}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value);
+                          setCouponError("");
+                        }}
+                        placeholder="Enter code"
+                        className="flex-1"
                       />
-                      <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                        {item.quantity}
-                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleApplyCoupon}
+                        disabled={isValidatingCoupon}
+                      >
+                        {isValidatingCoupon ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Apply"
+                        )}
+                      </Button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate">{item.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {item.price.toFixed(2)} EGP each
-                      </p>
+                  )}
+                  {couponError && (
+                    <p className="text-sm text-destructive mt-1">{couponError}</p>
+                  )}
+
+                  {publicCoupons.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase">Available Offers</p>
+                      <div className="flex flex-wrap gap-2">
+                        {publicCoupons.map((coupon) => (
+                          <button
+                            key={coupon._id}
+                            onClick={() => {
+                              setCouponCode(coupon.code);
+                              setCouponError("");
+                            }}
+                            className="text-xs flex items-center gap-1.5 px-2 py-1 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors text-primary"
+                          >
+                            <Tag className="h-3 w-3" />
+                            <span className="font-bold">{coupon.code}</span>
+                            <span>•</span>
+                            <span>{coupon.discountValue}{coupon.discountType === 'percentage' ? '%' : ' EGP'} OFF</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>{subtotal.toFixed(2)} EGP</span>
                   </div>
-                ))}
-              </div>
-
-              <Separator />
-
-              <div>
-                <Label htmlFor="coupon" className="text-sm">
-                  Coupon Code
-                </Label>
-                {appliedCoupon ? (
-                  <div className="mt-2 flex items-center justify-between rounded-md border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900 p-2">
-                    <div className="flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-600">
-                        {appliedCoupon.code}
-                      </span>
-                      <Badge variant="secondary" className="text-xs">
-                        {appliedCoupon.code === "FREESHIP"
-                          ? "Free Shipping"
-                          : appliedCoupon.type === "percentage"
-                          ? `${appliedCoupon.discount}% off`
-                          : `$${appliedCoupon.discount} off`}
-                      </Badge>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Discount</span>
+                      <span>-{discountAmount.toFixed(2)} EGP</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={handleRemoveCoupon}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                  )}
+                  <div className="flex justify-between text-sm text-muted-foreground font-medium">
+                    <span>Shipping</span>
+                    <span className={(shippingCost === 0 || appliedCoupon?.freeShipping) ? (appliedCoupon?.freeShipping || (formData.state !== "" && shippingCost === 0) ? "text-green-600 font-bold" : "") : ""}>
+                      {appliedCoupon?.freeShipping
+                        ? "FREE"
+                        : formData.state === ""
+                          ? "Select governorate"
+                          : shippingCost === 0
+                            ? "FREE"
+                            : `${shippingCost.toFixed(2)} EGP`}
+                    </span>
                   </div>
-                ) : (
-                  <div className="mt-2 flex gap-2">
-                    <Input
-                      id="coupon"
-                      value={couponCode}
-                      onChange={(e) => {
-                        setCouponCode(e.target.value);
-                        setCouponError("");
-                      }}
-                      placeholder="Enter code"
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleApplyCoupon}
-                    >
-                      Apply
-                    </Button>
+                  <Separator />
+                  <div className="flex justify-between font-semibold text-lg">
+                    <span>Total</span>
+                    <span>{total.toFixed(2)} EGP</span>
                   </div>
-                )}
-                {couponError && (
-                  <p className="text-sm text-destructive mt-1">{couponError}</p>
-                )}
-                <p className="text-xs text-muted-foreground mt-2">
-                  Try: SAVE10, DENTAL20, FLAT50, FREESHIP
-                </p>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>{subtotal.toFixed(2)} EGP</span>
                 </div>
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>Discount</span>
-                    <span>-{discountAmount.toFixed(2)} EGP</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Shipping</span>
-                  <span>
-                    {shippingCost === 0 ? (
-                      <span className="text-green-600">Free</span>
-                    ) : (
-                      `${shippingCost.toFixed(2)} EGP`
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax</span>
-                  <span>{taxAmount.toFixed(2)} EGP</span>
-                </div>
-              </div>
 
-              <Separator />
-
-              <div className="flex justify-between font-semibold text-lg">
-                <span>Total</span>
-                <span>{total.toFixed(2)} EGP</span>
-              </div>
-
-              {subtotal >= 100 && !appliedCoupon && (
-                <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-3 text-sm">
-                  <p className="font-medium text-green-600">
-                    🎉 You qualify for free shipping!
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

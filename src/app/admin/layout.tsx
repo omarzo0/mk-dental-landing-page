@@ -10,9 +10,11 @@ import {
   LogOut,
   Menu,
   Package,
+  Receipt,
   Settings,
   ShoppingCart,
   Tag,
+  Truck,
   Users,
   X,
 } from "lucide-react";
@@ -33,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "~/ui/primitives/dropdown-menu";
 import { Separator } from "~/ui/primitives/separator";
-import { Sheet, SheetContent, SheetTrigger } from "~/ui/primitives/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "~/ui/primitives/sheet";
 import { Skeleton } from "~/ui/primitives/skeleton";
 
 const sidebarLinks = [
@@ -48,11 +50,6 @@ const sidebarLinks = [
     icon: Box,
   },
   {
-    title: "Packages",
-    href: "/admin/packages",
-    icon: Package,
-  },
-  {
     title: "Coupons",
     href: "/admin/coupons",
     icon: Tag,
@@ -63,14 +60,14 @@ const sidebarLinks = [
     icon: ShoppingCart,
   },
   {
-    title: "Customers",
-    href: "/admin/customers",
-    icon: Users,
-  },
-  {
     title: "Transactions",
     href: "/admin/transactions",
     icon: CreditCard,
+  },
+  {
+    title: "Payments",
+    href: "/admin/payments",
+    icon: Receipt,
   },
   {
     title: "Settings",
@@ -183,15 +180,18 @@ export default function AdminLayout({
 }) {
   const { isAuthenticated, isAdmin, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Protect admin routes
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || !isAdmin)) {
-      router.push("/login");
+      // Include the current path so login can redirect back
+      const callbackUrl = encodeURIComponent(pathname);
+      router.replace(`/login?callbackUrl=${callbackUrl}`);
     }
-  }, [isAuthenticated, isAdmin, isLoading, router]);
+  }, [isAuthenticated, isAdmin, isLoading, router, pathname]);
 
   // Show loading state while checking auth
   if (isLoading) {
@@ -260,9 +260,9 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      {/* Mobile Sidebar */}
       <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
         <SheetContent side="left" className="w-64 p-0">
+          <SheetTitle className="sr-only">Admin Navigation Menu</SheetTitle>
           <div className="flex h-14 items-center border-b px-4">
             <Link
               href="/admin"

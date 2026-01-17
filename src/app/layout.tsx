@@ -25,9 +25,55 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://mk-dental.com";
+
 export const metadata: Metadata = {
-  description: `${SEO_CONFIG.description}`,
-  title: `${SEO_CONFIG.fullName}`,
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: SEO_CONFIG.fullName,
+    template: `%s | ${SEO_CONFIG.name}`,
+  },
+  description: SEO_CONFIG.description,
+  keywords: ["dental tools", "dental equipment", "dental instruments", "dentistry", "medical supplies"],
+  authors: [{ name: SEO_CONFIG.name }],
+  creator: SEO_CONFIG.name,
+  publisher: SEO_CONFIG.name,
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: baseUrl,
+    siteName: SEO_CONFIG.name,
+    title: SEO_CONFIG.fullName,
+    description: SEO_CONFIG.description,
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: SEO_CONFIG.fullName,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SEO_CONFIG.fullName,
+    description: SEO_CONFIG.description,
+    images: ["/og-image.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

@@ -17,11 +17,20 @@ import {
   DialogTitle,
 } from "~/ui/primitives/dialog";
 
+import { resolveImageUrl } from "~/lib/image-utils";
+
 interface Product {
   id: string;
   name: string;
   description?: string;
   price: number;
+  discountedPrice?: number;
+  discount?: {
+    type: "percentage" | "fixed";
+    value: number;
+    isActive: boolean;
+    discountedPrice?: number;
+  };
   originalPrice?: number;
   image: string;
   category: string;
@@ -44,16 +53,24 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
   if (!product) return null;
 
   const inWishlist = isInWishlist(product.id);
-  const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  const hasDiscount = !!(product.discount?.isActive && product.discount?.discountedPrice && product.discount.discountedPrice < product.price);
+  const displayPrice = hasDiscount ? product.discount!.discountedPrice! : product.price;
+  const originalPrice = hasDiscount ? product.price : product.originalPrice;
+
+  const discountValue = hasDiscount
+    ? (product.discount!.type === "percentage"
+      ? product.discount!.value
+      : Math.round(((product.price - product.discount!.discountedPrice!) / product.price) * 100))
     : 0;
+
+  const resolvedImage = resolveImageUrl(product.image);
 
   const handleAddToCart = () => {
     addItem({
       id: product.id,
       name: product.name,
-      price: product.price,
-      image: product.image,
+      price: displayPrice,
+      image: resolvedImage,
       category: product.category,
     }, quantity);
     toast.success(`Added ${quantity} item(s) to cart`);
@@ -69,9 +86,9 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
       addToWishlist({
         id: product.id,
         name: product.name,
-        price: product.price,
-        originalPrice: product.originalPrice,
-        image: product.image,
+        price: displayPrice,
+        originalPrice: originalPrice,
+        image: resolvedImage,
         category: product.category,
       });
       toast.success("Added to wishlist");
@@ -86,14 +103,15 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
           {/* Product Image */}
           <div className="relative aspect-square bg-muted">
             <Image
-              src={product.image}
+              src={resolvedImage}
               alt={product.name}
               fill
               className="object-cover"
+              unoptimized
             />
-            {discount > 0 && (
+            {discountValue > 0 && (
               <Badge className="absolute top-4 left-4" variant="destructive">
-                -{discount}%
+                -{discountValue}%
               </Badge>
             )}
             {!product.inStock && (
@@ -135,10 +153,10 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
 
               {/* Price */}
               <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-3xl font-bold">{product.price} EGP</span>
-                {product.originalPrice && (
+                <span className="text-3xl font-bold">{displayPrice.toFixed(2)} EGP</span>
+                {originalPrice && originalPrice > displayPrice && (
                   <span className="text-lg text-muted-foreground line-through">
-                    {product.originalPrice} EGP
+                    {originalPrice.toFixed(2)} EGP
                   </span>
                 )}
               </div>

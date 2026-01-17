@@ -4,7 +4,7 @@ import { Heart, LayoutDashboard, LogOut, Menu, Settings, User, X } from "lucide-
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { SEO_CONFIG } from "~/app";
 import { cn } from "~/lib/cn";
@@ -37,6 +37,15 @@ export function Header({ showAuth = true }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { itemCount: wishlistCount } = useWishlist();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useState(() => {
+    // This runs only on the client in some cases, but useEffect is safer
+  });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -53,7 +62,7 @@ export function Header({ showAuth = true }: HeaderProps) {
     { href: "/", name: "Home" },
     { href: "/products", name: "Products" },
     { href: "/about", name: "About" },
-    { href: "/contact", name: "Contact" },
+
   ];
 
   const renderContent = () => (
@@ -80,7 +89,7 @@ export function Header({ showAuth = true }: HeaderProps) {
                 height={40}
                 className="rounded-lg"
               />
-             
+
             </Link>
             <nav
               className={`
@@ -118,11 +127,7 @@ export function Header({ showAuth = true }: HeaderProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Search bar - desktop */}
-            <div className="hidden md:block">
-              <SearchBar />
-            </div>
-            
+
             {/* Mobile menu button */}
             <Button
               className="md:hidden"
@@ -140,7 +145,7 @@ export function Header({ showAuth = true }: HeaderProps) {
             <Link href="/wishlist">
               <Button size="icon" variant="ghost" className="relative">
                 <Heart className="h-5 w-5" />
-                {wishlistCount > 0 && (
+                {mounted && wishlistCount > 0 && (
                   <Badge
                     className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-[10px]"
                     variant="default"
@@ -194,27 +199,27 @@ export function Header({ showAuth = true }: HeaderProps) {
                               <LayoutDashboard className="mr-2 h-4 w-4" />
                               Admin Dashboard
                             </Link>
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem asChild>
+                          <Link href="/account">
+                            <User className="mr-2 h-4 w-4" />
+                            My Account
+                          </Link>
                         </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem asChild>
-                        <Link href="/account">
-                          <User className="mr-2 h-4 w-4" />
-                          My Account
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/account/settings">
-                          <Settings className="mr-2 h-4 w-4" />
-                          Settings
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Log out
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        <DropdownMenuItem asChild>
+                          <Link href="/account/settings">
+                            <Settings className="mr-2 h-4 w-4" />
+                            Settings
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Log out
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </>
                 ) : (
                   <>
@@ -223,11 +228,7 @@ export function Header({ showAuth = true }: HeaderProps) {
                         Login
                       </Button>
                     </Link>
-                    <Link href="/signup">
-                      <Button size="sm">
-                        Sign Up
-                      </Button>
-                    </Link>
+
                   </>
                 )}
               </div>
@@ -240,11 +241,7 @@ export function Header({ showAuth = true }: HeaderProps) {
       {mobileMenuOpen && (
         <div className="md:hidden">
           <div className="space-y-1 border-b px-4 py-3">
-            {/* Mobile search bar */}
-            <div className="mb-3">
-              <SearchBar className="w-full xl:w-full" />
-            </div>
-            
+
             {navigation.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -314,11 +311,7 @@ export function Header({ showAuth = true }: HeaderProps) {
                         Login
                       </Button>
                     </Link>
-                    <Link href="/signup" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full">
-                        Sign Up
-                      </Button>
-                    </Link>
+
                   </div>
                 )}
               </div>

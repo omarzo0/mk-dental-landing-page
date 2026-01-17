@@ -4,11 +4,14 @@ import { Eye, GitCompare, Heart, ShoppingCart, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
+import { toast } from "sonner";
 
 import { cn } from "~/lib/cn";
+import { useWishlist } from "~/lib/hooks/use-wishlist";
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardFooter } from "~/ui/primitives/card";
+import { resolveImageUrl } from "~/lib/image-utils";
 
 type ProductCardProps = Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -23,14 +26,23 @@ type ProductCardProps = Omit<
   product: {
     category: string;
     id: string;
+    _id?: string;
     image: string;
     inStock?: boolean;
     name: string;
     originalPrice?: number;
     price: number;
+    discountedPrice?: number;
+    discount?: {
+      type: "percentage" | "fixed";
+      value: number;
+      isActive: boolean;
+      discountedPrice?: number;
+    };
     rating?: number;
     brand?: string;
     reviews?: number;
+    quantity?: number;
   };
   variant?: "compact" | "default";
   viewMode?: "grid" | "list";
@@ -49,13 +61,14 @@ export function ProductCard({
   viewMode = "grid",
   ...props
 }: ProductCardProps) {
+  // Determine stock status based on quantity if present
+  const isOutOfStock = typeof product.quantity === "number" ? product.quantity === 0 : product.inStock === false;
+  const inStock = !isOutOfStock;
   const [isHovered, setIsHovered] = React.useState(false);
   const [isAddingToCart, setIsAddingToCart] = React.useState(false);
-  const [isInWishlist, setIsInWishlist] = React.useState(isInWishlistProp);
 
-  React.useEffect(() => {
-    setIsInWishlist(isInWishlistProp);
-  }, [isInWishlistProp]);
+  const { toggleItem, isInWishlist: checkIsInWishlist } = useWishlist();
+  const isInWishlist = checkIsInWishlist(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -70,8 +83,23 @@ export function ProductCard({
 
   const handleAddToWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
+
+    toggleItem({
+      id: product.id,
+      name: product.name,
+      price: displayPrice,
+      image: product.image,
+      category: product.category,
+      originalPrice: originalPrice,
+    });
+
+    if (isInWishlist) {
+      toast.success("Removed from wishlist");
+    } else {
+      toast.success("Added to wishlist");
+    }
+
     if (onAddToWishlist) {
-      setIsInWishlist(!isInWishlist);
       onAddToWishlist(product.id);
     }
   };
@@ -90,10 +118,14 @@ export function ProductCard({
     }
   };
 
-  const discount = product.originalPrice
-    ? Math.round(
-        ((product.originalPrice - product.price) / product.originalPrice) * 100
-      )
+  const hasDiscount = !!(product.discount?.isActive && product.discount?.discountedPrice && product.discount.discountedPrice < product.price);
+  const displayPrice = hasDiscount ? product.discount!.discountedPrice! : product.price;
+  const originalPrice = hasDiscount ? product.price : product.originalPrice;
+
+  const discountValue = hasDiscount
+    ? (product.discount!.type === "percentage"
+      ? product.discount!.value
+      : Math.round(((product.price - product.discount!.discountedPrice!) / product.price) * 100))
     : 0;
 
   const renderStars = () => {
@@ -110,8 +142,8 @@ export function ProductCard({
               i < fullStars
                 ? "fill-yellow-400 text-yellow-400"
                 : i === fullStars && hasHalfStar
-                ? "fill-yellow-400/50 text-yellow-400"
-                : "stroke-muted/40 text-muted"
+                  ? "fill-yellow-400/50 text-yellow-400"
+                  : "stroke-muted/40 text-muted"
             )}
             key={`star-${product.id}-position-${i + 1}`}
           />
@@ -137,17 +169,23 @@ export function ProductCard({
         >
           <div className="flex gap-4 p-4">
             {/* Image */}
-            <Link href={`/products/${product.id}`} className="relative h-32 w-32 flex-shrink-0">
+            <Link href={`/products/${product.id}`} className="relative h-10 w-10 flex-shrink-0">
               <Image
                 alt={product.name}
                 className="object-cover rounded-md"
                 fill
-                sizes="128px"
-                src={product.image}
+                sizes="18px"
+                src={resolveImageUrl(product.image)}
+                unoptimized
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target.src.includes("/placeholder.svg")) return;
+                  target.src = "/placeholder.svg";
+                }}
               />
-              {discount > 0 && (
+              {discountValue > 0 && (
                 <Badge className="absolute top-1 left-1 bg-destructive text-destructive-foreground text-xs">
-                  -{discount}%
+                  -{discountValue}%
                 </Badge>
               )}
             </Link>
@@ -170,10 +208,10 @@ export function ProductCard({
                   <div className="mt-2">{renderStars()}</div>
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-bold">{product.price.toFixed(2)} EGP</span>
-                  {product.originalPrice && product.originalPrice > product.price && (
+                  <span className="text-lg font-bold">{displayPrice.toFixed(2)} EGP</span>
+                  {originalPrice && originalPrice > displayPrice && (
                     <span className="block text-sm text-muted-foreground line-through">
-                      {product.originalPrice.toFixed(2)} EGP
+                      {originalPrice.toFixed(2)} EGP
                     </span>
                   )}
                 </div>
@@ -183,10 +221,10 @@ export function ProductCard({
                 <Button
                   size="sm"
                   onClick={handleAddToCart}
-                  disabled={!product.inStock || isAddingToCart}
+                  disabled={!inStock || isAddingToCart}
                 >
                   <ShoppingCart className="mr-2 h-4 w-4" />
-                  {isAddingToCart ? "Adding..." : product.inStock ? "Add to Cart" : "Out of Stock"}
+                  {isAddingToCart ? "Adding..." : inStock ? "Add to Cart" : "Out of Stock"}
                 </Button>
                 <Button variant="outline" size="icon" onClick={handleAddToWishlist}>
                   <Heart className={cn("h-4 w-4", isInWishlist && "fill-destructive text-destructive")} />
@@ -224,7 +262,7 @@ export function ProductCard({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <div className="relative aspect-square overflow-hidden rounded-t-lg">
+          <div className="relative h-32 sm:h-40 w-full overflow-hidden rounded-t-lg bg-muted/30">
             {product.image && (
               <Image
                 alt={product.name}
@@ -233,13 +271,19 @@ export function ProductCard({
                   isHovered && "scale-105"
                 )}
                 fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                src={product.image}
+                sizes="(max-width: 368px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                src={resolveImageUrl(product.image)}
+                unoptimized
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target.src.includes("/placeholder.svg")) return;
+                  target.src = "/placeholder.svg";
+                }}
               />
             )}
 
             {/* Stock badge */}
-            {product.inStock === false && (
+            {isOutOfStock && (
               <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
                 <Badge variant="secondary" className="text-sm">Out of Stock</Badge>
               </div>
@@ -258,7 +302,7 @@ export function ProductCard({
             </Badge>
 
             {/* Discount badge */}
-            {discount > 0 && (
+            {discountValue > 0 && (
               <Badge
                 className={`
                 absolute top-1 right-1 bg-destructive text-[9px] px-1 py-0.5
@@ -267,7 +311,7 @@ export function ProductCard({
                 text-destructive-foreground
               `}
               >
-                -{discount}%
+                -{discountValue}%
               </Badge>
             )}
 
@@ -316,12 +360,12 @@ export function ProductCard({
             </div>
           </div>
 
-          <CardContent className="p-2 pt-2 sm:p-3 sm:pt-3 md:p-4 md:pt-4">
+          <CardContent className="p-2 pt-2 sm:p-3 sm:pt-3">
             {/* Product name with line clamp */}
             <h3
               className={`
                 line-clamp-2 text-xs font-medium leading-tight transition-colors
-                sm:text-sm md:text-base
+                sm:text-sm
                 group-hover:text-primary
               `}
             >
@@ -332,12 +376,12 @@ export function ProductCard({
               <>
                 <div className="mt-1 hidden sm:block">{renderStars()}</div>
                 <div className="mt-1 flex flex-col gap-0 sm:mt-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 md:mt-2 md:gap-1.5">
-                  <span className="text-xs font-semibold text-foreground sm:text-sm md:text-base">
-                    {product.price.toFixed(2)} EGP
+                  <span className="text-xs font-semibold text-foreground sm:text-sm">
+                    {displayPrice.toFixed(2)} EGP
                   </span>
-                  {product.originalPrice ? (
-                    <span className="text-[10px] text-muted-foreground line-through sm:text-xs md:text-sm">
-                      {product.originalPrice.toFixed(2)} EGP
+                  {originalPrice && originalPrice > displayPrice ? (
+                    <span className="text-[10px] text-muted-foreground line-through sm:text-xs">
+                      {originalPrice.toFixed(2)} EGP
                     </span>
                   ) : null}
                 </div>
@@ -346,10 +390,10 @@ export function ProductCard({
           </CardContent>
 
           {variant === "default" && (
-            <CardFooter className="p-2 pt-0 sm:p-3 sm:pt-0 md:p-4 md:pt-0">
+            <CardFooter className="p-2 pt-0 sm:p-3 sm:pt-0">
               <Button
                 className={cn(
-                  "w-full gap-1 text-[10px] h-7 transition-all sm:gap-1.5 sm:text-xs sm:h-8 md:gap-2 md:text-sm md:h-9",
+                  "w-full gap-1 text-[10px] h-7 transition-all sm:gap-1.5 sm:text-xs sm:h-8",
                   isAddingToCart && "opacity-70"
                 )}
                 disabled={isAddingToCart}
@@ -357,16 +401,11 @@ export function ProductCard({
                 size="sm"
               >
                 {isAddingToCart ? (
-                  <div
-                    className={`
-                      h-3 w-3 animate-spin rounded-full border-2 sm:h-4 sm:w-4
-                      border-background border-t-transparent
-                    `}
-                  />
+                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-background border-t-transparent sm:h-4 sm:w-4" />
                 ) : (
                   <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
                 )}
-                <span className="hidden xs:inline">Add to </span>Cart
+                Cart
               </Button>
             </CardFooter>
           )}
@@ -376,11 +415,11 @@ export function ProductCard({
               <div className="flex w-full items-center justify-between">
                 <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
                   <span className="text-sm font-medium text-foreground sm:text-base">
-                    {product.price.toFixed(2)} EGP
+                    {displayPrice.toFixed(2)} EGP
                   </span>
-                  {product.originalPrice ? (
+                  {originalPrice && originalPrice > displayPrice ? (
                     <span className="text-xs text-muted-foreground line-through sm:text-sm">
-                      {product.originalPrice.toFixed(2)} EGP
+                      {originalPrice.toFixed(2)} EGP
                     </span>
                   ) : null}
                 </div>
@@ -407,7 +446,7 @@ export function ProductCard({
             </CardFooter>
           )}
 
-          {!product.inStock && (
+          {isOutOfStock && (
             <div
               className={`
                 absolute inset-0 flex items-center justify-center

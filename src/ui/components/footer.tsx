@@ -1,4 +1,4 @@
-import { Facebook, Instagram, Linkedin } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -31,7 +31,7 @@ export function Footer({ className }: { className?: string }) {
                 height={36}
                 className="rounded-lg"
               />
-            
+
             </Link>
             <p className="text-sm text-muted-foreground">
               Your trusted source for professional dental instruments and
@@ -46,16 +46,7 @@ export function Footer({ className }: { className?: string }) {
                 <Facebook className="h-4 w-4" />
                 <span className="sr-only">Facebook</span>
               </Button>
-              <Button
-                className="h-8 w-8 rounded-full"
-                size="icon"
-                variant="ghost"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-                <span className="sr-only">X</span>
-              </Button>
+
               <Button
                 className="h-8 w-8 rounded-full"
                 size="icon"
@@ -64,14 +55,7 @@ export function Footer({ className }: { className?: string }) {
                 <Instagram className="h-4 w-4" />
                 <span className="sr-only">Instagram</span>
               </Button>
-              <Button
-                className="h-8 w-8 rounded-full"
-                size="icon"
-                variant="ghost"
-              >
-                <Linkedin className="h-4 w-4" />
-                <span className="sr-only">LinkedIn</span>
-              </Button>
+
             </div>
           </div>
           <div>
@@ -148,101 +132,10 @@ export function Footer({ className }: { className?: string }) {
                   About Us
                 </Link>
               </li>
-              <li>
-                <Link
-                  className={`
-                    text-muted-foreground
-                    hover:text-foreground
-                  `}
-                  href="/careers"
-                >
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className={`
-                    text-muted-foreground
-                    hover:text-foreground
-                  `}
-                  href="/blog"
-                >
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className={`
-                    text-muted-foreground
-                    hover:text-foreground
-                  `}
-                  href="/contact"
-                >
-                  Contact
-                </Link>
-              </li>
+
             </ul>
           </div>
-          <div>
-            <h3 className="mb-4 text-sm font-semibold">Support</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link
-                  className={`
-                    text-muted-foreground
-                    hover:text-foreground
-                  `}
-                  href="/help"
-                >
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className={`
-                    text-muted-foreground
-                    hover:text-foreground
-                  `}
-                  href="/shipping"
-                >
-                  Shipping & Returns
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className={`
-                    text-muted-foreground
-                    hover:text-foreground
-                  `}
-                  href="/warranty"
-                >
-                  Warranty
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className={`
-                    text-muted-foreground
-                    hover:text-foreground
-                  `}
-                  href="/privacy"
-                >
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className={`
-                    text-muted-foreground
-                    hover:text-foreground
-                  `}
-                  href="/terms"
-                >
-                  Terms of Service
-                </Link>
-              </li>
-            </ul>
-          </div>
+
         </div>
         <div className="mt-12 border-t pt-8">
           <div
@@ -255,21 +148,7 @@ export function Footer({ className }: { className?: string }) {
               &copy; {new Date().getFullYear()} {SEO_CONFIG.name}. All rights
               reserved.
             </p>
-            <div
-              className={
-                "flex items-center gap-4 text-sm text-muted-foreground"
-              }
-            >
-              <Link className="hover:text-foreground" href="/privacy">
-                Privacy
-              </Link>
-              <Link className="hover:text-foreground" href="/terms">
-                Terms
-              </Link>
-              <Link className="hover:text-foreground" href="/cookies">
-                Cookies
-              </Link>
-            </div>
+
           </div>
         </div>
       </div>
