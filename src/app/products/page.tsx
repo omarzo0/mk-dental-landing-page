@@ -806,14 +806,20 @@ function ProductsContent() {
       {quickViewProduct && (
         <QuickViewModal
           product={{
-            ...quickViewProduct,
-            _id: quickViewProduct.id,
-            images: [quickViewProduct.image],
+            id: quickViewProduct.id,
+            name: quickViewProduct.name,
             price: quickViewProduct.price,
-            description: "Product description..." // You might want to fetch full details or use available
+            image: quickViewProduct.image,
+            category: quickViewProduct.category,
+            inStock: quickViewProduct.inStock,
+            rating: quickViewProduct.rating,
+            reviewCount: quickViewProduct.reviews,
+            originalPrice: quickViewProduct.originalPrice,
+            discount: quickViewProduct.discount,
+            description: "Product description..."
           }}
-          isOpen={!!quickViewProduct}
-          onClose={() => setQuickViewProduct(null)}
+          open={!!quickViewProduct}
+          onOpenChange={(open) => !open && setQuickViewProduct(null)}
         />
       )}
     </div>

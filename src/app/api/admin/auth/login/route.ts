@@ -10,7 +10,7 @@ const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:5000";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: any = await request.json();
 
     const apiUrl = `${API_BASE_URL}/api/admin/auth/login`;
     console.log("[Admin Login Proxy] API_BASE_URL:", API_BASE_URL);
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse JSON
-    let data;
+    let data: any;
     try {
       data = JSON.parse(responseText);
     } catch (parseError) {

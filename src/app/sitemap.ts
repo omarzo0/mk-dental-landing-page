@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
         // Fetch products for sitemap
         const productsRes = await fetch(`${baseUrl}/api/user/products?limit=1000`);
-        const productsData = await productsRes.json();
+        const productsData = await productsRes.json() as any;
         const productEntries = (productsData.data?.products || []).map((p: any) => ({
             url: `${baseUrl}/products/${p._id || p.id}`,
             lastModified: new Date(p.updatedAt || new Date()),
@@ -32,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
         // Fetch packages for sitemap
         const packagesRes = await fetch(`${baseUrl}/api/products?productType=package&limit=100`);
-        const packagesData = await packagesRes.json();
+        const packagesData = await packagesRes.json() as any;
         const packageEntries = (packagesData.data?.products || packagesData.data?.packages || []).map((p: any) => ({
             url: `${baseUrl}/packages/${p._id || p.id}`,
             lastModified: new Date(p.updatedAt || new Date()),

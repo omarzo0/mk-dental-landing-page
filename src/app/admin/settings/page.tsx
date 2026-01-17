@@ -1447,7 +1447,7 @@ function AccountSettingsTab() {
         // Update the local auth storage with new name
         const authData = localStorage.getItem("mk-dental-auth");
         if (authData) {
-          const parsed = JSON.parse(authData);
+          const parsed: any = JSON.parse(authData);
           parsed.name = `${profileFormData.firstName} ${profileFormData.lastName}`.trim();
           localStorage.setItem("mk-dental-auth", JSON.stringify(parsed));
         }
@@ -2495,7 +2495,7 @@ function AdminsTab() {
         return;
       }
 
-      const data = await response.json();
+      const data: any = await response.json();
       if (data.success) {
         // Support both old and new API response structures
         if (Array.isArray(data.data)) {
@@ -2544,8 +2544,8 @@ function AdminsTab() {
       username: admin.username,
       email: admin.email,
       password: "",
-      firstName: admin.profile?.firstName || "",
-      lastName: admin.profile?.lastName || "",
+      firstName: (admin as any).profile?.firstName || "",
+      lastName: (admin as any).profile?.lastName || "",
       role: admin.role,
       isActive: admin.isActive,
     });
@@ -3047,7 +3047,7 @@ function SecurityTab() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const data: any = await response.json();
 
       if (response.ok && data.success) {
         toast.success("Password changed successfully");

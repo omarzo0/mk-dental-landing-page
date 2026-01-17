@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
+import { Suspense } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "~/lib/hooks/use-auth";
@@ -13,7 +14,7 @@ import { Checkbox } from "~/ui/primitives/checkbox";
 import { Input } from "~/ui/primitives/input";
 import { Label } from "~/ui/primitives/label";
 
-export default function LoginPage() {
+function LoginContent() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
   const [email, setEmail] = React.useState("");
@@ -191,5 +192,20 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto flex min-h-[calc(100vh-200px)] items-center justify-center px-4 py-8 sm:py-12">
+        <div className="animate-pulse space-y-4 text-center">
+          <div className="h-8 w-8 mx-auto rounded-full bg-muted" />
+          <div className="h-4 w-24 mx-auto bg-muted rounded" />
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

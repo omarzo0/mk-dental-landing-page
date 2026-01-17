@@ -4,6 +4,7 @@ import { ChevronLeft, Eye, EyeOff, Lock, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
+import { Suspense } from "react";
 import { toast } from "sonner";
 
 import { Button } from "~/ui/primitives/button";
@@ -11,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "~/ui/primitives/input";
 import { Label } from "~/ui/primitives/label";
 
-export default function AdminResetPasswordPage() {
+function ResetPasswordContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const emailFromQuery = searchParams.get("email") || "";
@@ -155,5 +156,20 @@ export default function AdminResetPasswordPage() {
                 </CardFooter>
             </Card>
         </div>
+    );
+}
+
+export default function AdminResetPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="container mx-auto flex min-h-[calc(100vh-200px)] items-center justify-center px-4 py-8 sm:py-12">
+                <div className="animate-pulse space-y-4 text-center">
+                    <div className="h-12 w-12 mx-auto rounded-full bg-muted" />
+                    <div className="h-6 w-32 mx-auto bg-muted rounded" />
+                </div>
+            </div>
+        }>
+            <ResetPasswordContent />
+        </Suspense>
     );
 }

@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:5000";
 // POST /api/admin/orders/[id]/refund
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const authHeader = request.headers.get("authorization");
@@ -16,7 +16,7 @@ export async function POST(
             );
         }
 
-        const id = params.id;
+        const { id } = await params;
 
         const response = await fetch(`${API_BASE_URL}/api/admin/orders/${id}/refund`, {
             method: "POST",

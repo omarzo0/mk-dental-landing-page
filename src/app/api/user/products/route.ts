@@ -26,6 +26,22 @@ export async function GET(request: Request) {
       }
     }
 
+    // Explicitly filter by subcategory if requested
+    const subcategory = searchParams.get('subcategory');
+    if (subcategory && data.success && data.data) {
+      console.log(`Filtering by subcategory: ${subcategory}`);
+      const filterFn = (p: any) => {
+        const pSub = typeof p.subcategory === 'string' ? p.subcategory : p.subcategory?.name;
+        return pSub && pSub.toLowerCase() === subcategory.toLowerCase();
+      };
+
+      if (Array.isArray(data.data)) {
+        data.data = data.data.filter(filterFn);
+      } else if (Array.isArray(data.data.products)) {
+        data.data.products = data.data.products.filter(filterFn);
+      }
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     console.error("Products API error:", error);
