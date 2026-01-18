@@ -251,7 +251,7 @@ export default function AdminCouponsPage() {
       
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -268,7 +268,7 @@ export default function AdminCouponsPage() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -321,7 +321,7 @@ export default function AdminCouponsPage() {
       
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -334,7 +334,7 @@ export default function AdminCouponsPage() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -368,7 +368,7 @@ export default function AdminCouponsPage() {
       
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -381,7 +381,7 @@ export default function AdminCouponsPage() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -458,7 +458,7 @@ export default function AdminCouponsPage() {
       
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -532,7 +532,7 @@ export default function AdminCouponsPage() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 

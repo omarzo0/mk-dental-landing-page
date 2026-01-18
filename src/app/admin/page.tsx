@@ -178,7 +178,7 @@ export default function AdminDashboardPage() {
   const handleTokenExpiration = React.useCallback(() => {
     localStorage.removeItem("mk-dental-token");
     localStorage.removeItem("mk-dental-auth");
-    window.location.href = "/login?expired=true";
+    window.location.href = "/admin/login?expired=true";
   }, []);
 
   const fetchDashboardData = React.useCallback(async () => {

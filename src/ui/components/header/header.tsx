@@ -221,7 +221,7 @@ export function Header({ showAuth = true }: HeaderProps) {
                   </>
                 ) : (
                   <>
-                    <Link href="/login">
+                    <Link href="/admin/login">
                       <Button variant="ghost" size="sm">
                         Login
                       </Button>
@@ -304,7 +304,7 @@ export function Header({ showAuth = true }: HeaderProps) {
                   </div>
                 ) : (
                   <div className="flex gap-2">
-                    <Link href="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/admin/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="outline" className="w-full">
                         Login
                       </Button>

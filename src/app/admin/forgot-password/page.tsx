@@ -36,7 +36,7 @@ export default function AdminForgotPasswordPage() {
                 setIsSent(true);
                 toast.success("Password reset code has been sent to your email.");
                 setTimeout(() => {
-                    router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+                    router.push(`/admin/reset-password?email=${encodeURIComponent(email)}`);
                 }, 2000);
             } else {
                 toast.error(data.message || data.error || "Failed to send reset code.");
@@ -68,7 +68,7 @@ export default function AdminForgotPasswordPage() {
                                 We have sent a 6-digit verification code to <strong>{email}</strong>.
                             </p>
                             <Button asChild className="w-full">
-                                <Link href={`/reset-password?email=${encodeURIComponent(email)}`}>
+                                <Link href={`/admin/reset-password?email=${encodeURIComponent(email)}`}>
                                     Enter Reset Code
                                 </Link>
                             </Button>
@@ -102,7 +102,7 @@ export default function AdminForgotPasswordPage() {
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-4 px-4 sm:px-6">
                     <Button variant="ghost" asChild className="w-full text-muted-foreground hover:text-primary">
-                        <Link href="/login" className="flex items-center justify-center">
+                        <Link href="/admin/login" className="flex items-center justify-center">
                             <ChevronLeft className="mr-2 h-4 w-4" />
                             Back to Login
                         </Link>

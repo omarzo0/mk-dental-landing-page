@@ -116,7 +116,7 @@ function UserMenu({ isCollapsed }: { isCollapsed: boolean }) {
 
   const handleLogout = () => {
     logout();
-    router.push("/login");
+    router.push("/admin/login");
   };
 
   const initials = user?.name
@@ -184,14 +184,18 @@ export default function AdminLayout({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // List of routes that don't require authentication
+  const publicRoutes = ["/admin/login", "/admin/forgot-password", "/admin/reset-password"];
+  const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
+
   // Protect admin routes
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || !isAdmin)) {
+    if (!isLoading && !isPublicRoute && (!isAuthenticated || !isAdmin)) {
       // Include the current path so login can redirect back
       const callbackUrl = encodeURIComponent(pathname);
-      router.replace(`/login?callbackUrl=${callbackUrl}`);
+      router.replace(`/admin/login?callbackUrl=${callbackUrl}`);
     }
-  }, [isAuthenticated, isAdmin, isLoading, router, pathname]);
+  }, [isAuthenticated, isAdmin, isLoading, router, pathname, isPublicRoute]);
 
   // Show loading state while checking auth
   if (isLoading) {
@@ -205,8 +209,12 @@ export default function AdminLayout({
     );
   }
 
-  // Don't render anything if not authenticated
+  // Don't render sidebar/header if not authenticated or not an admin
+  // But allow public routes (login, forgot-password, reset-password) to render their content
   if (!isAuthenticated || !isAdmin) {
+    if (isPublicRoute) {
+      return <>{children}</>;
+    }
     return null;
   }
 

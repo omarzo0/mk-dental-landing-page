@@ -212,7 +212,7 @@ export default function AdminOrdersPage() {
       const token = localStorage.getItem("mk-dental-token");
 
       if (!token) {
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -224,7 +224,7 @@ export default function AdminOrdersPage() {
       if (response.status === 401) {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -275,7 +275,7 @@ export default function AdminOrdersPage() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -311,7 +311,7 @@ export default function AdminOrdersPage() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -619,7 +619,7 @@ export default function AdminOrdersPage() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -633,7 +633,7 @@ export default function AdminOrdersPage() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 

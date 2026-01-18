@@ -59,7 +59,7 @@ function ResetPasswordContent() {
             if (data.success) {
                 toast.success("Password has been reset successfully. Redirecting to login...");
                 setTimeout(() => {
-                    router.push("/login");
+                    router.push("/admin/login");
                 }, 1000);
             } else {
                 toast.error(data.message || data.error || "Failed to reset password.");
@@ -148,7 +148,7 @@ function ResetPasswordContent() {
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-4 px-4 sm:px-6">
                     <Button variant="ghost" asChild className="w-full text-muted-foreground hover:text-primary">
-                        <Link href="/forgot-password" className="flex items-center justify-center">
+                        <Link href="/admin/forgot-password" className="flex items-center justify-center">
                             <ChevronLeft className="mr-2 h-4 w-4" />
                             Resend Code
                         </Link>

@@ -12,7 +12,6 @@ const quickLinks = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
   { href: "/admin/products", icon: Package, label: "Products" },
-  { href: "/admin/customers", icon: Users, label: "Customers" },
   { href: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 

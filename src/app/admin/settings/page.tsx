@@ -114,7 +114,7 @@ function ShippingFeesTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -126,7 +126,7 @@ function ShippingFeesTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -192,7 +192,7 @@ function ShippingFeesTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -219,7 +219,7 @@ function ShippingFeesTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -245,7 +245,7 @@ function ShippingFeesTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -258,7 +258,7 @@ function ShippingFeesTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -289,7 +289,7 @@ function ShippingFeesTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -302,7 +302,7 @@ function ShippingFeesTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -594,7 +594,7 @@ function PaymentMethodsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -606,7 +606,7 @@ function PaymentMethodsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -689,7 +689,7 @@ function PaymentMethodsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -740,7 +740,7 @@ function PaymentMethodsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -767,7 +767,7 @@ function PaymentMethodsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -780,7 +780,7 @@ function PaymentMethodsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -808,7 +808,7 @@ function PaymentMethodsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -821,7 +821,7 @@ function PaymentMethodsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -854,7 +854,7 @@ function PaymentMethodsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -867,7 +867,7 @@ function PaymentMethodsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1342,7 +1342,7 @@ function AccountSettingsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1355,7 +1355,7 @@ function AccountSettingsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1396,7 +1396,7 @@ function AccountSettingsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1420,7 +1420,7 @@ function AccountSettingsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1437,7 +1437,7 @@ function AccountSettingsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1682,7 +1682,7 @@ function BannersTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1697,7 +1697,7 @@ function BannersTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1792,7 +1792,7 @@ function BannersTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1856,7 +1856,7 @@ function BannersTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1883,7 +1883,7 @@ function BannersTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1896,7 +1896,7 @@ function BannersTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1929,7 +1929,7 @@ function BannersTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -1942,7 +1942,7 @@ function BannersTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -2479,7 +2479,7 @@ function AdminsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -2491,7 +2491,7 @@ function AdminsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -2583,7 +2583,7 @@ function AdminsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -2617,7 +2617,7 @@ function AdminsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -2644,7 +2644,7 @@ function AdminsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -2657,7 +2657,7 @@ function AdminsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -2690,7 +2690,7 @@ function AdminsTab() {
 
       if (!token) {
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 
@@ -2703,7 +2703,7 @@ function AdminsTab() {
         localStorage.removeItem("mk-dental-token");
         localStorage.removeItem("mk-dental-auth");
         toast.error("Session expired. Please log in again.");
-        window.location.href = "/login?expired=true";
+        window.location.href = "/admin/login?expired=true";
         return;
       }
 

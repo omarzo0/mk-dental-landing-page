@@ -33,20 +33,7 @@ export async function GET(request: Request) {
       }
     }
 
-    // Explicitly filter by showInHomepage if requested
-    const showInHomepage = searchParams.get('showInHomepage');
-    if (showInHomepage === 'true' && data.success && data.data) {
-      console.log("[User API] Filtering by showInHomepage=true");
-      const filterFn = (p: any) => p.showInHomepage === true || p.showInHomepage === "true";
 
-      if (Array.isArray(data.data)) {
-        data.data = data.data.filter(filterFn);
-      } else if (Array.isArray(data.data.products)) {
-        data.data.products = data.data.products.filter(filterFn);
-      } else if (Array.isArray(data.data.packages)) {
-        data.data.packages = data.data.packages.filter(filterFn);
-      }
-    }
 
     // Explicitly filter by subcategory if requested
     const subcategory = searchParams.get('subcategory');
