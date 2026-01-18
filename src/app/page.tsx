@@ -76,14 +76,39 @@ export default function HomePage() {
     "description": SEO_CONFIG.description,
     "address": {
       "@type": "PostalAddress",
+      "streetAddress": "Elshouhda St. front police club",
       "addressLocality": "Suez",
       "addressCountry": "EG"
     },
     "contactPoint": {
       "@type": "ContactPoint",
-      "telephone": "+20-XXX-XXXXXXX",
-      "contactType": "customer service"
-    }
+      "telephone": "+20-100-341-8089",
+      "contactType": "customer service",
+      "availableLanguage": ["Arabic", "English"]
+    },
+    "email": "Marwan.koda@yahoo.com",
+    "sameAs": [
+      "https://facebook.com/mkdental",
+      "https://instagram.com/mkdental"
+    ]
+  };
+
+  const localBusinessJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": SEO_CONFIG.name,
+    "image": `${baseUrl}/og-image.png`,
+    "url": baseUrl,
+    "telephone": "+20-100-341-8089",
+    "email": "Marwan.koda@yahoo.com",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Elshouhda St. front police club",
+      "addressLocality": "Suez",
+      "addressCountry": "EG"
+    },
+    "openingHours": "Mo-Su 12:00-22:30",
+    "priceRange": "$$"
   };
 
   const websiteJsonLd = {
@@ -234,6 +259,7 @@ export default function HomePage() {
   return (
     <>
       <JsonLd data={organizationJsonLd} />
+      <JsonLd data={localBusinessJsonLd} />
       <JsonLd data={websiteJsonLd} />
       <main
         className={`
