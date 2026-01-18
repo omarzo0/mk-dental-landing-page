@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, LayoutDashboard, LogOut, Menu, Settings, User, X } from "lucide-react";
+import { Heart, LayoutDashboard, LogOut, Menu, User, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,10 +10,12 @@ import { SEO_CONFIG } from "~/app";
 import { cn } from "~/lib/cn";
 import { useAuth } from "~/lib/hooks/use-auth";
 import { useWishlist } from "~/lib/hooks/use-wishlist";
+
 import { Cart } from "~/ui/components/cart";
 import { SearchBar } from "~/ui/components/search-bar";
 import { Avatar, AvatarFallback } from "~/ui/primitives/avatar";
 import { Badge } from "~/ui/primitives/badge";
+
 import { Button } from "~/ui/primitives/button";
 import {
   DropdownMenu,
@@ -142,6 +144,7 @@ export function Header({ showAuth = true }: HeaderProps) {
               )}
             </Button>
 
+
             <Link href="/wishlist">
               <Button size="icon" variant="ghost" className="relative">
                 <Heart className="h-5 w-5" />
@@ -207,12 +210,7 @@ export function Header({ showAuth = true }: HeaderProps) {
                             My Account
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/account/settings">
-                            <Settings className="mr-2 h-4 w-4" />
-                            Settings
-                          </Link>
-                        </DropdownMenuItem>
+
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                           <LogOut className="mr-2 h-4 w-4" />

@@ -1,10 +1,10 @@
 "use client";
 
-import { Heart, MapPin, Package, ShoppingCart } from "lucide-react";
+import { Package, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 
 import { useAuth } from "~/lib/hooks/use-auth";
-import { useWishlist } from "~/lib/hooks/use-wishlist";
+
 import { Button } from "~/ui/primitives/button";
 import {
   Card,
@@ -34,7 +34,7 @@ const recentOrders = [
 
 export default function AccountPage() {
   const { user } = useAuth();
-  const { itemCount: wishlistCount } = useWishlist();
+
 
   const stats = [
     {
@@ -42,18 +42,6 @@ export default function AccountPage() {
       value: "12",
       icon: Package,
       href: "/account/orders",
-    },
-    {
-      label: "Wishlist Items",
-      value: String(wishlistCount),
-      icon: Heart,
-      href: "/account/wishlist",
-    },
-    {
-      label: "Saved Addresses",
-      value: "2",
-      icon: MapPin,
-      href: "/account/addresses",
     },
   ];
 
@@ -63,7 +51,7 @@ export default function AccountPage() {
       <div>
         <h1 className="text-2xl font-bold">Welcome back, {user?.name?.split(" ")[0]}!</h1>
         <p className="text-muted-foreground">
-          Manage your orders, addresses, and account settings.
+          Manage your orders.
         </p>
       </div>
 
@@ -118,13 +106,12 @@ export default function AccountPage() {
                   </div>
                   <div className="flex items-center gap-4">
                     <span
-                      className={`text-sm font-medium ${
-                        order.status === "Delivered"
-                          ? "text-green-600"
-                          : order.status === "Shipped"
+                      className={`text-sm font-medium ${order.status === "Delivered"
+                        ? "text-green-600"
+                        : order.status === "Shipped"
                           ? "text-blue-600"
                           : "text-yellow-600"
-                      }`}
+                        }`}
                     >
                       {order.status}
                     </span>
@@ -147,27 +134,7 @@ export default function AccountPage() {
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Button variant="outline" className="h-auto py-4" asChild>
-              <Link href="/account/addresses">
-                <MapPin className="mr-2 h-4 w-4" />
-                Manage Addresses
-              </Link>
-            </Button>
-            <Button variant="outline" className="h-auto py-4" asChild>
-              <Link href="/account/settings">
-                Update Profile
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+
     </div>
   );
 }

@@ -44,12 +44,14 @@ interface ProductFormData {
     inStock: boolean;
     isActive: boolean;
     isFeatured: boolean;
+    showInHomepage: boolean;
     image: string;
     discount: {
         type: "percentage" | "fixed";
         value: string;
         isActive: boolean;
     };
+    size: string;
 }
 
 // Product type (mirroring the one in page.tsx)
@@ -72,6 +74,7 @@ interface Product {
     }>;
     status: "active" | "inactive" | "draft";
     featured?: boolean;
+    showInHomepage?: boolean;
     productType?: "single" | "package";
     discount?: {
         type: "percentage" | "fixed";
@@ -81,6 +84,7 @@ interface Product {
     specifications?: {
         barcode?: string;
         material?: string;
+        size?: number[];
     };
     seo?: {
         metaTitle?: string;
@@ -116,12 +120,14 @@ export function EditProductDialog({
         inStock: true,
         isActive: true,
         isFeatured: false,
+        showInHomepage: false,
         image: "",
         discount: {
             type: "percentage",
             value: "",
             isActive: false,
         },
+        size: "",
     });
     const [selectedNewImage, setSelectedNewImage] = React.useState<File | null>(null);
     const [newImagePreview, setNewImagePreview] = React.useState<string>("");
@@ -168,12 +174,14 @@ export function EditProductDialog({
                 inStock: (product.inventory?.quantity ?? 0) > 0,
                 isActive: product.status === "active",
                 isFeatured: product.featured || false,
+                showInHomepage: product.showInHomepage || false,
                 image: imageUrl,
                 discount: {
                     type: product.discount?.type || "percentage",
                     value: product.discount?.value?.toString() || "",
                     isActive: product.discount?.isActive || false,
                 },
+                size: product.specifications?.size?.join(", ") || "",
             });
             setSelectedNewImage(null);
             setNewImagePreview("");
@@ -350,12 +358,18 @@ export function EditProductDialog({
                 },
                 status: formData.isActive ? "active" : "inactive",
                 featured: formData.isFeatured,
+                showInHomepage: formData.showInHomepage,
                 images: finalImages,
                 discount: {
                     type: formData.discount.type,
                     value: parseFloat(formData.discount.value) || 0,
                     isActive: formData.discount.isActive,
                 },
+                specifications: {
+                    size: formData.size
+                        ? formData.size.split(",").map(s => parseFloat(s.trim())).filter(n => !isNaN(n))
+                        : undefined
+                }
             };
 
             console.log("Final product edit data to be sent:", JSON.stringify(productData, null, 2));
@@ -578,6 +592,26 @@ export function EditProductDialog({
                                             value={formData.lowStockThreshold}
                                             onChange={handleInputChange}
                                         />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Specifications */}
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-medium">Specifications</h3>
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="edit-size">Size (comma separated)</Label>
+                                        <Input
+                                            id="edit-size"
+                                            name="size"
+                                            placeholder="e.g. 10, 20, 30"
+                                            value={formData.size}
+                                            onChange={handleInputChange}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Enter numeric sizes separated by commas
+                                        </p>
                                     </div>
                                 </div>
                             </div>

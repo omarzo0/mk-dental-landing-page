@@ -48,12 +48,14 @@ interface ProductFormData {
   inStock: boolean;
   isActive: boolean;
   isFeatured: boolean;
+  showInHomepage: boolean;
   image: string;
   discount: {
     type: "percentage" | "fixed";
     value: string;
     isActive: boolean;
   };
+  size: string;
 }
 
 export default function NewProductPage() {
@@ -72,12 +74,14 @@ export default function NewProductPage() {
     inStock: true,
     isActive: true,
     isFeatured: false,
+    showInHomepage: false,
     image: "",
     discount: {
       type: "percentage",
       value: "",
       isActive: false,
     },
+    size: "",
   });
 
   const [selectedImage, setSelectedImage] = React.useState<File | null>(null);
@@ -266,6 +270,7 @@ export default function NewProductPage() {
         },
         status: formData.isActive ? "active" : "inactive",
         featured: formData.isFeatured,
+        showInHomepage: formData.showInHomepage,
         productType: "single",
         images: uploadedUrls, // Always send as array
         discount: {
@@ -273,6 +278,11 @@ export default function NewProductPage() {
           value: parseFloat(formData.discount.value) || 0,
           isActive: formData.discount.isActive,
         },
+        specifications: {
+          size: formData.size
+            ? formData.size.split(",").map(s => parseFloat(s.trim())).filter(n => !isNaN(n))
+            : undefined
+        }
       };
 
       console.log("Final product data to be sent:", JSON.stringify(productData, null, 2));
@@ -510,7 +520,7 @@ export default function NewProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <Label htmlFor="stockQuantity">Stock Quantity</Label>
                     <Input
                       id="stockQuantity"
@@ -522,7 +532,7 @@ export default function NewProductPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <Label htmlFor="lowStockThreshold">Low Stock Alert</Label>
                     <Input
                       id="lowStockThreshold"
@@ -536,6 +546,46 @@ export default function NewProductPage() {
                       Alert when stock falls below this number
                     </p>
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Show in Homepage</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Display in Featured section
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.showInHomepage}
+                      onCheckedChange={(checked) =>
+                        handleSwitchChange("showInHomepage", checked)
+                      }
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Specifications */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Specifications</CardTitle>
+                <CardDescription>
+                  Additional product details
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="size">Size (comma separated)</Label>
+                  <Input
+                    id="size"
+                    name="size"
+                    placeholder="e.g. 10, 20, 30"
+                    value={formData.size}
+                    onChange={handleInputChange}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter numeric sizes separated by commas
+                  </p>
                 </div>
               </CardContent>
             </Card>

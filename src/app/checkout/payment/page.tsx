@@ -115,7 +115,7 @@ function PaymentContent() {
                                     <Link href="/checkout">Try Again</Link>
                                 </Button>
                                 <Button asChild>
-                                    <Link href="/contact">Contact Support</Link>
+
                                 </Button>
                             </div>
                         </div>

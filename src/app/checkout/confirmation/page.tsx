@@ -318,9 +318,9 @@ function ConfirmationContent() {
       <div className="mt-8 text-center">
         <p className="text-sm text-muted-foreground">
           Questions about your order?{" "}
-          <Link href="/contact" className="text-primary hover:underline">
-            Contact Support
-          </Link>
+          <span className="text-muted-foreground">
+            Contact us at support@mk-dental.com
+          </span>
         </p>
       </div>
     </div>

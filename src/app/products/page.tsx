@@ -86,6 +86,9 @@ interface Product {
   rating: number;
   brand?: string;
   reviews?: number;
+  specifications?: {
+    size?: number[];
+  };
 }
 
 interface PaginationMetadata {
@@ -136,7 +139,7 @@ function ProductsContent() {
 
   const [pagination, setPagination] = React.useState<PaginationMetadata | null>(null);
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [pageSize] = React.useState(12);
+  const [pageSize] = React.useState(10);
 
   /* ----------------------- Data Fetching ------------------------- */
 
@@ -201,11 +204,12 @@ function ProductsContent() {
       originalPrice: p.originalPrice || p.compareAtPrice,
       image: resolveImageUrl(p.images?.[0] || p.image),
       category: p.category?.name || p.category || "Uncategorized",
-      subcategory: p.subcategory,
+      subcategory: typeof p.subcategory === 'object' ? p.subcategory?.name : p.subcategory,
       brand: p.brand,
       rating: p.ratings?.average || p.rating || 0,
       reviews: p.ratings?.count || p.reviews || 0,
       inStock: (p.inventory?.quantity > 0 || p.inStock !== false) && p.status !== 'inactive',
+      specifications: p.specifications,
     }));
   };
 

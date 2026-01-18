@@ -1,13 +1,9 @@
 "use client";
 
 import {
-  CreditCard,
-  Heart,
   LayoutDashboard,
   LogOut,
-  MapPin,
   Package,
-  Settings,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -22,9 +18,6 @@ import { Skeleton } from "~/ui/primitives/skeleton";
 const sidebarLinks = [
   { href: "/account", label: "Overview", icon: LayoutDashboard },
   { href: "/account/orders", label: "My Orders", icon: Package },
-  { href: "/account/addresses", label: "Addresses", icon: MapPin },
-  { href: "/account/wishlist", label: "Wishlist", icon: Heart },
-  { href: "/account/settings", label: "Settings", icon: Settings },
 ];
 
 export default function AccountLayout({

@@ -12,6 +12,8 @@ import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardFooter } from "~/ui/primitives/card";
 import { resolveImageUrl } from "~/lib/image-utils";
+import { Dialog, DialogContent, DialogTitle } from "~/ui/primitives/dialog";
+
 
 type ProductCardProps = Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -25,6 +27,7 @@ type ProductCardProps = Omit<
   isInCompare?: boolean;
   product: {
     category: string;
+    subcategory?: string;
     id: string;
     _id?: string;
     image: string;
@@ -66,6 +69,7 @@ export function ProductCard({
   const inStock = !isOutOfStock;
   const [isHovered, setIsHovered] = React.useState(false);
   const [isAddingToCart, setIsAddingToCart] = React.useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = React.useState(false);
 
   const { toggleItem, isInWishlist: checkIsInWishlist } = useWishlist();
   const isInWishlist = checkIsInWishlist(product.id);
@@ -106,6 +110,7 @@ export function ProductCard({
 
   const handleQuickView = (e: React.MouseEvent) => {
     e.preventDefault();
+    setIsImageModalOpen(true);
     if (onQuickView) {
       onQuickView(product.id);
     }
@@ -194,18 +199,22 @@ export function ProductCard({
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <Badge variant="outline" className="mb-2 text-xs">
-                    {product.category}
-                  </Badge>
+                  <div className="mb-2 flex flex-col gap-1">
+                    <Badge variant="outline" className="text-xs w-fit">
+                      {product.category}
+                    </Badge>
+                    {product.subcategory && (
+                      <span className="text-xs text-muted-foreground">
+                        {product.subcategory}
+                      </span>
+                    )}
+                  </div>
                   <Link href={`/products/${product.id}`}>
                     <h3 className="font-medium hover:text-primary line-clamp-2">
                       {product.name}
                     </h3>
                   </Link>
-                  {product.brand && (
-                    <p className="text-sm text-muted-foreground mt-1">{product.brand}</p>
-                  )}
-                  <div className="mt-2">{renderStars()}</div>
+
                 </div>
                 <div className="text-right">
                   <span className="text-lg font-bold">{displayPrice.toFixed(2)} EGP</span>
@@ -289,17 +298,23 @@ export function ProductCard({
               </div>
             )}
 
-            {/* Category badge */}
-            <Badge
-              className={`
-                absolute top-1 left-1 bg-background/80 backdrop-blur-sm text-[9px] max-w-[70%] truncate px-1.5 py-0.5
-                sm:text-[10px] sm:top-1.5 sm:left-1.5 sm:px-2 sm:py-0.5
-                md:text-xs md:top-2 md:left-2 md:max-w-none
-              `}
-              variant="outline"
-            >
-              {product.category}
-            </Badge>
+            <div className="absolute top-1 left-1 flex flex-col gap-0.5 items-start max-w-[70%] z-10 transition-all sm:top-1.5 sm:left-1.5 md:top-2 md:left-2">
+              <Badge
+                className={`
+                  bg-background/80 backdrop-blur-sm text-[9px] truncate px-1.5 py-0.5
+                  sm:text-[10px] sm:px-2 sm:py-0.5
+                  md:text-xs md:max-w-none
+                `}
+                variant="outline"
+              >
+                {product.category}
+              </Badge>
+              {product.subcategory && (
+                <span className="bg-background/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] text-foreground/80 truncate max-w-full">
+                  {product.subcategory}
+                </span>
+              )}
+            </div>
 
             {/* Discount badge */}
             {discountValue > 0 && (
@@ -360,12 +375,12 @@ export function ProductCard({
             </div>
           </div>
 
-          <CardContent className="p-2 pt-2 sm:p-3 sm:pt-3">
+          <CardContent className="p-2 pt-1.5 sm:p-3 sm:pt-2">
             {/* Product name with line clamp */}
             <h3
               className={`
-                line-clamp-2 text-xs font-medium leading-tight transition-colors
-                sm:text-sm
+                line-clamp-2 text-[10px] leading-3 font-medium transition-colors
+                sm:text-xs sm:leading-4
                 group-hover:text-primary
               `}
             >
@@ -374,8 +389,8 @@ export function ProductCard({
 
             {variant === "default" && (
               <>
-                <div className="mt-1 hidden sm:block">{renderStars()}</div>
-                <div className="mt-1 flex flex-col gap-0 sm:mt-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 md:mt-2 md:gap-1.5">
+                <div className="mt-0.5 hidden sm:block">{renderStars()}</div>
+                <div className="mt-0.5 flex flex-col gap-0 sm:mt-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 md:mt-1.5 md:gap-1.5">
                   <span className="text-xs font-semibold text-foreground sm:text-sm">
                     {displayPrice.toFixed(2)} EGP
                   </span>
@@ -393,7 +408,7 @@ export function ProductCard({
             <CardFooter className="p-2 pt-0 sm:p-3 sm:pt-0">
               <Button
                 className={cn(
-                  "w-full gap-1 text-[10px] h-7 transition-all sm:gap-1.5 sm:text-xs sm:h-8",
+                  "w-full gap-1 text-[10px] h-6 transition-all sm:gap-1.5 sm:text-xs sm:h-7",
                   isAddingToCart && "opacity-70"
                 )}
                 disabled={isAddingToCart}
@@ -460,6 +475,21 @@ export function ProductCard({
           )}
         </Card>
       </Link>
+
+      <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden bg-transparent border-none shadow-none">
+          <DialogTitle className="sr-only">Product Image: {product.name}</DialogTitle>
+          <div className="relative aspect-square w-full max-h-[80vh]">
+            <Image
+              src={resolveImageUrl(product.image)}
+              alt={product.name}
+              fill
+              className="object-contain"
+              unoptimized
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

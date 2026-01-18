@@ -163,7 +163,7 @@ export default function HomePage() {
   }, []);
 
   React.useEffect(() => {
-    fetch("/api/user/products?productType=single")
+    fetch("/api/user/products?productType=single&showInHomepage=true")
       .then((res) => res.json())
       .then((data: any) => {
         if (data.success && Array.isArray(data.data)) {
@@ -864,19 +864,7 @@ export default function HomePage() {
                       Shop All Products
                     </Button>
                   </Link>
-                  <Link href="/contact" className="w-full sm:w-auto">
-                    <Button
-                      className={`
-                        h-12 w-full border-white/20 bg-white/10 px-8 text-white
-                        hover:bg-white/20
-                        sm:w-auto
-                      `}
-                      size="lg"
-                      variant="outline"
-                    >
-                      Contact Us
-                    </Button>
-                  </Link>
+
                 </div>
               </div>
             </div>

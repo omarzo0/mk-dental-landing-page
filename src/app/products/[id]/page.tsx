@@ -28,6 +28,7 @@ interface Product {
   image: string;
   images?: string[];
   category: string;
+  subcategory?: string | { name: string };
   brand?: string;
   rating?: number;
   reviews?: number;
@@ -35,6 +36,9 @@ interface Product {
   quantity?: number;
   features?: string[];
   specs?: Record<string, any>;
+  specifications?: {
+    size?: number[];
+  };
   packageContents?: string[];
 }
 
@@ -279,9 +283,19 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
           <div className="space-y-6">
             {/* Header */}
             <div>
-              <Badge variant="outline" className="mb-2">
-                {product.category}
-              </Badge>
+              <div className="flex flex-wrap gap-2 mb-2">
+                <Badge variant="outline">
+                  {product.category}
+                </Badge>
+                {(() => {
+                  const subName = typeof product.subcategory === 'object' ? product.subcategory?.name : product.subcategory;
+                  return subName ? (
+                    <Badge variant="secondary">
+                      {subName}
+                    </Badge>
+                  ) : null;
+                })()}
+              </div>
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 {product.name}
               </h1>
@@ -329,6 +343,20 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
                 {product.description}
               </p>
             </div>
+
+            {/* Available Sizes */}
+            {product.specifications?.size && product.specifications.size.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Available Sizes</h3>
+                <div className="flex flex-wrap gap-2">
+                  {product.specifications.size.map((size) => (
+                    <Badge key={size} variant="secondary" className="px-3 py-1 text-sm font-normal">
+                      {size}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Features */}
             {product.features && product.features.length > 0 && (
@@ -398,11 +426,13 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Specifications */}
-            {product.specs && (
+            {(product.specs) && (
               <div>
                 <h2 className="text-xl font-semibold mb-4">Specifications</h2>
                 <div className="space-y-3">
-                  {Object.entries(product.specs).map(([key, value]) => (
+
+                  {/* Display generic specs */}
+                  {product.specs && Object.entries(product.specs).map(([key, value]) => (
                     <div key={key} className="flex justify-between py-2 border-b">
                       <span className="text-sm font-medium capitalize">
                         {key.replace(/([A-Z])/g, ' $1').trim()}
