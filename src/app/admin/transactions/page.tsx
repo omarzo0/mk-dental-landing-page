@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
+import { TransactionStatsSkeleton, TransactionTableSkeleton } from "~/ui/components/admin/product-skeletons";
 
 import { cn } from "~/lib/cn";
 import { Badge } from "~/ui/primitives/badge";
@@ -443,48 +444,52 @@ export default function AdminTransactionsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Transactions</CardDescription>
-            <CardTitle className="text-2xl">
-              {loading ? "-" : (pagination?.totalTransactions || 0).toLocaleString()}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Volume</CardDescription>
-            <CardTitle className="text-2xl text-green-600">
-              {loading ? "-" : formatCurrency(summary?.totalAmount || 0, "EGP")}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Successful</CardDescription>
-            <CardTitle className="text-2xl">
-              {loading ? "-" : (summary?.successCount || 0).toLocaleString()}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Failed</CardDescription>
-            <CardTitle className="text-2xl text-red-600">
-              {loading ? "-" : (summary?.failedCount || 0).toLocaleString()}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Average Amount</CardDescription>
-            <CardTitle className="text-2xl">
-              {loading ? "-" : formatCurrency(summary?.avgAmount || 0, "EGP")}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
+      {loading && !summary ? (
+        <TransactionStatsSkeleton />
+      ) : summary ? (
+        <div className="grid gap-4 md:grid-cols-5">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Transactions</CardDescription>
+              <CardTitle className="text-2xl">
+                {(pagination?.totalTransactions || 0).toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Volume</CardDescription>
+              <CardTitle className="text-2xl text-green-600">
+                {formatCurrency(summary.totalAmount, "EGP")}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Successful</CardDescription>
+              <CardTitle className="text-2xl">
+                {summary.successCount.toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Failed</CardDescription>
+              <CardTitle className="text-2xl text-red-600">
+                {summary.failedCount.toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Average Amount</CardDescription>
+              <CardTitle className="text-2xl">
+                {formatCurrency(summary.avgAmount, "EGP")}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      ) : null}
 
       {/* Transactions Table */}
       <Card>
@@ -592,11 +597,7 @@ export default function AdminTransactionsPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
+                  <TransactionTableSkeleton />
                 ) : filteredTransactions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">

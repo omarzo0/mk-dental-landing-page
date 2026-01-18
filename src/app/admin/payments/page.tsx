@@ -67,6 +67,11 @@ import {
   TableRow,
 } from "~/ui/primitives/table";
 import { Textarea } from "~/ui/primitives/textarea";
+import {
+  PaymentMethodSkeleton,
+  PaymentStatsSkeleton,
+  PaymentTableSkeleton,
+} from "~/ui/components/admin/product-skeletons";
 
 // Types
 interface Payment {
@@ -739,51 +744,57 @@ export default function AdminPaymentsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Payments</CardDescription>
-            <CardTitle className="text-2xl">
-              {loading ? "-" : (statistics?.totalPayments || 0).toLocaleString()}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Amount</CardDescription>
-            <CardTitle className="text-2xl text-green-600">
-              {loading ? "-" : formatCurrency(statistics?.totalAmount || 0)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Completed</CardDescription>
-            <CardTitle className="text-2xl">
-              {loading ? "-" : (statistics?.completedPayments || 0).toLocaleString()}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Failed</CardDescription>
-            <CardTitle className="text-2xl text-red-600">
-              {loading ? "-" : (statistics?.failedPayments || 0).toLocaleString()}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Average Amount</CardDescription>
-            <CardTitle className="text-2xl">
-              {loading ? "-" : formatCurrency(statistics?.averageAmount || 0)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
+      {loading ? (
+        <PaymentStatsSkeleton />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-5">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Payments</CardDescription>
+              <CardTitle className="text-2xl">
+                {(statistics?.totalPayments || 0).toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Amount</CardDescription>
+              <CardTitle className="text-2xl text-green-600">
+                {formatCurrency(statistics?.totalAmount || 0)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Completed</CardDescription>
+              <CardTitle className="text-2xl">
+                {(statistics?.completedPayments || 0).toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Failed</CardDescription>
+              <CardTitle className="text-2xl text-red-600">
+                {(statistics?.failedPayments || 0).toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Average Amount</CardDescription>
+              <CardTitle className="text-2xl">
+                {formatCurrency(statistics?.averageAmount || 0)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      )}
 
       {/* Method Distribution */}
-      {methodDistribution.length > 0 && (
+      {loading ? (
+        <PaymentMethodSkeleton />
+      ) : methodDistribution.length > 0 ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Payment Method Distribution</CardTitle>
@@ -802,7 +813,7 @@ export default function AdminPaymentsPage() {
             </div>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
       {/* Payments Table */}
       <Card>
@@ -923,11 +934,7 @@ export default function AdminPaymentsPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
+                  <PaymentTableSkeleton />
                 ) : filteredPayments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">

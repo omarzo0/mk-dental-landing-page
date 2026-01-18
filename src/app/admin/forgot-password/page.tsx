@@ -13,12 +13,34 @@ import { Label } from "~/ui/primitives/label";
 
 export default function AdminForgotPasswordPage() {
     const [email, setEmail] = React.useState("");
+    const [errors, setErrors] = React.useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = React.useState(false);
     const [isSent, setIsSent] = React.useState(false);
     const router = useRouter();
 
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {};
+
+        if (!email) {
+            newErrors.email = "Email is required";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            newErrors.email = "Please provide a valid email";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleInputChange = (value: string) => {
+        setEmail(value);
+        if (errors.email) {
+            setErrors({});
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateForm()) return;
         setIsLoading(true);
 
         try {
@@ -82,10 +104,14 @@ export default function AdminForgotPasswordPage() {
                                     type="email"
                                     placeholder="admin@clinic.com"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => handleInputChange(e.target.value)}
                                     required
                                     disabled={isLoading}
+                                    className={errors.email ? "border-destructive text-destructive" : ""}
                                 />
+                                {errors.email && (
+                                    <p className="text-xs text-destructive mt-1">{errors.email}</p>
+                                )}
                             </div>
                             <Button type="submit" className="w-full" disabled={isLoading}>
                                 {isLoading ? (

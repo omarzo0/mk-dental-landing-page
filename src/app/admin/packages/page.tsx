@@ -12,7 +12,7 @@ import Link from "next/link";
 import * as React from "react";
 import { toast } from "sonner";
 
-import { packages as mockPackages } from "~/app/mocks";
+// Mock packages removed
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
 import {
@@ -50,7 +50,7 @@ import {
 
 export default function AdminPackagesPage() {
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [packages, setPackages] = React.useState(mockPackages);
+  const [packages, setPackages] = React.useState<any[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [packageToDelete, setPackageToDelete] = React.useState<string | null>(null);
 

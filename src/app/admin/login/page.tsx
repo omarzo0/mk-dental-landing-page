@@ -19,6 +19,7 @@ function LoginContent() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
   const { login, isAuthenticated, isAdmin, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,6 +58,42 @@ function LoginContent() {
     );
   }
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Email
+    if (!email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = "Please provide a valid email";
+    }
+
+    // Password
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long";
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)) {
+      newErrors.password = "Password must contain lowercase, uppercase, number and special character";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: "email" | "password", value: string) => {
+    if (field === "email") setEmail(value);
+    if (field === "password") setPassword(value);
+
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
   // Don't show login form if already authenticated (will redirect via useEffect)
   if (isAuthenticated) {
     return (
@@ -71,6 +108,7 @@ function LoginContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     setIsLoading(true);
 
     const result = await login(email, password);
@@ -103,9 +141,13 @@ function LoginContent() {
                 type="email"
                 placeholder="john@clinic.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleInputChange("email", e.target.value)}
                 required
+                className={errors.email ? "border-destructive text-destructive" : ""}
               />
+              {errors.email && (
+                <p className="text-xs text-destructive mt-1">{errors.email}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -115,9 +157,13 @@ function LoginContent() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
                   required
+                  className={errors.password ? "border-destructive text-destructive" : ""}
                 />
+                {errors.password && (
+                  <p className="text-xs text-destructive mt-1">{errors.password}</p>
+                )}
                 <Button
                   type="button"
                   variant="ghost"

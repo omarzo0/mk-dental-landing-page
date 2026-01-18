@@ -12,6 +12,7 @@ import {
 import * as React from "react";
 import { toast } from "sonner";
 import { resolveImageUrl } from "~/lib/image-utils";
+import { PackageTableSkeleton } from "~/ui/components/admin/product-skeletons";
 
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
@@ -163,11 +164,7 @@ export function PackageManager() {
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
-                                            <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                                        </TableCell>
-                                    </TableRow>
+                                    <PackageTableSkeleton />
                                 ) : filteredPackages.map((pkg) => (
                                     <TableRow key={pkg._id}>
                                         <TableCell>

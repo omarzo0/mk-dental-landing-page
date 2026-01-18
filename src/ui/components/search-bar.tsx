@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
-import { products } from "~/app/mocks";
+// Mock products removed
 import { cn } from "~/lib/cn";
 import { Button } from "~/ui/primitives/button";
 import {
@@ -27,6 +27,15 @@ interface SearchBarProps {
   className?: string;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  originalPrice?: number;
+  image: string;
+}
+
 export function SearchBar({ className }: SearchBarProps) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
@@ -36,13 +45,9 @@ export function SearchBar({ className }: SearchBarProps) {
   const filteredProducts = React.useMemo(() => {
     if (!query.trim()) return [];
     const searchTerm = query.toLowerCase();
-    return products
-      .filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchTerm) ||
-          product.category.toLowerCase().includes(searchTerm)
-      )
-      .slice(0, 6); // Limit to 6 suggestions
+    // Products search is handled by redirecting to /products?search=...
+    // Mock suggestions are disabled
+    return [] as Product[];
   }, [query]);
 
   // Get popular/recent searches

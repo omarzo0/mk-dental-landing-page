@@ -18,6 +18,8 @@ import {
   CardTitle,
 } from "~/ui/primitives/card";
 import { Input } from "~/ui/primitives/input";
+import { PackageSkeleton } from "~/ui/components/home-skeletons";
+
 
 interface PackageItem {
   _id: string;
@@ -184,119 +186,123 @@ export default function PackagesPage() {
               xl:grid-cols-3
             `}
           >
-            {filteredPackages.map((pkg) => (
-              <Card
-                key={pkg.id}
-                className={`
-                  relative flex h-full flex-col overflow-hidden rounded-2xl
-                  border bg-card py-0 shadow-sm transition-all duration-300
-                  hover:shadow-lg
-                `}
-              >
-                {/* Badge */}
-                {pkg.badge && (
-                  <Badge
-                    className={`
-                      absolute top-3 right-3 z-20 bg-primary text-primary-foreground
-                    `}
-                  >
-                    {pkg.badge}
-                  </Badge>
-                )}
+            {loading ? (
+              <PackageSkeleton />
+            ) : (
+              filteredPackages.map((pkg) => (
+                <Card
+                  key={pkg.id}
+                  className={`
+                    relative flex h-full flex-col overflow-hidden rounded-2xl
+                    border bg-card py-0 shadow-sm transition-all duration-300
+                    hover:shadow-lg
+                  `}
+                >
+                  {/* Badge */}
+                  {pkg.badge && (
+                    <Badge
+                      className={`
+                        absolute top-3 right-3 z-20 bg-primary text-primary-foreground
+                      `}
+                    >
+                      {pkg.badge}
+                    </Badge>
+                  )}
 
-                {/* Image */}
-                <div className="relative aspect-video overflow-hidden">
-                  <div
-                    className={`
-                      absolute inset-0 z-10 bg-gradient-to-t
-                      from-background via-background/20 to-transparent
-                    `}
-                  />
-                  <Image
-                    alt={pkg.name}
-                    className="object-cover"
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    src={resolveImageUrl(pkg.image) || "/placeholder.svg"}
-                    unoptimized
-                  />
-                </div>
-
-                {/* Content */}
-                <CardHeader className="relative z-20 -mt-8 pb-3">
-                  <CardTitle className="text-xl sm:text-2xl">{pkg.name}</CardTitle>
-                  <CardDescription className="text-sm sm:text-base">
-                    {pkg.description}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="flex-1 pb-4">
-                  {/* Items included */}
-                  <div className="mb-4">
-                    <h4 className="mb-2 text-sm font-semibold text-foreground">
-                      What's Included ({pkg.itemCount || pkg.items?.length || 0} items):
-                    </h4>
-                    <ul className="space-y-1.5">
-                      {pkg.items?.map((item) => (
-                        <li
-                          key={item._id}
-                          className="flex items-center gap-2 text-sm text-muted-foreground"
-                        >
-                          <Check className="h-3.5 w-3.5 flex-shrink-0 text-green-500" />
-                          <span>{item.quantity}x {item.name}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  {/* Image */}
+                  <div className="relative aspect-video overflow-hidden">
+                    <div
+                      className={`
+                        absolute inset-0 z-10 bg-gradient-to-t
+                        from-background via-background/20 to-transparent
+                      `}
+                    />
+                    <Image
+                      alt={pkg.name}
+                      className="object-cover"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      src={resolveImageUrl(pkg.image) || "/placeholder.svg"}
+                      unoptimized
+                    />
                   </div>
 
-                  {/* Price */}
-                  <div className="rounded-lg bg-muted/50 p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-2xl font-bold text-foreground sm:text-3xl">
-                          {pkg.price.toFixed(2)} EGP
+                  {/* Content */}
+                  <CardHeader className="relative z-20 -mt-8 pb-3">
+                    <CardTitle className="text-xl sm:text-2xl">{pkg.name}</CardTitle>
+                    <CardDescription className="text-sm sm:text-base">
+                      {pkg.description}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="flex-1 pb-4">
+                    {/* Items included */}
+                    <div className="mb-4">
+                      <h4 className="mb-2 text-sm font-semibold text-foreground">
+                        What's Included ({pkg.itemCount || pkg.items?.length || 0} items):
+                      </h4>
+                      <ul className="space-y-1.5">
+                        {pkg.items?.map((item) => (
+                          <li
+                            key={item._id}
+                            className="flex items-center gap-2 text-sm text-muted-foreground"
+                          >
+                            <Check className="h-3.5 w-3.5 flex-shrink-0 text-green-500" />
+                            <span>{item.quantity}x {item.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Price */}
+                    <div className="rounded-lg bg-muted/50 p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-2xl font-bold text-foreground sm:text-3xl">
+                            {pkg.price.toFixed(2)} EGP
+                          </div>
+                          {pkg.originalPrice && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-sm text-muted-foreground line-through">
+                                {pkg.originalPrice.toFixed(2)} EGP
+                              </span>
+                              {pkg.savings && (
+                                <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                  Save {pkg.savings}%
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        {pkg.originalPrice && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm text-muted-foreground line-through">
-                              {pkg.originalPrice.toFixed(2)} EGP
-                            </span>
-                            {pkg.savings && (
-                              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                Save {pkg.savings}%
-                              </Badge>
-                            )}
+                        {pkg.originalPrice && pkg.savings && (
+                          <div className="text-right">
+                            <div className="text-lg font-semibold text-primary">
+                              {pkg.savings}% OFF
+                            </div>
                           </div>
                         )}
                       </div>
-                      {pkg.originalPrice && pkg.savings && (
-                        <div className="text-right">
-                          <div className="text-lg font-semibold text-primary">
-                            {pkg.savings}% OFF
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                </CardContent>
+                  </CardContent>
 
-                <CardFooter className="pt-0 pb-4">
-                  <Button
-                    className="w-full gap-2"
-                    size="lg"
-                    onClick={() => handleAddToCart(pkg)}
-                    disabled={addingToCart === pkg.id}
-                  >
-                    {addingToCart === pkg.id ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
-                    ) : (
-                      <ShoppingCart className="h-4 w-4" />
-                    )}
-                    Add Package to Cart
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+                  <CardFooter className="pt-0 pb-4">
+                    <Button
+                      className="w-full gap-2"
+                      size="lg"
+                      onClick={() => handleAddToCart(pkg)}
+                      disabled={addingToCart === pkg.id}
+                    >
+                      {addingToCart === pkg.id ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                      ) : (
+                        <ShoppingCart className="h-4 w-4" />
+                      )}
+                      Add Package to Cart
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))
+            )}
           </div>
 
           {/* Empty state */}

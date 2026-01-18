@@ -43,8 +43,6 @@ interface ProductFormData {
     lowStockThreshold: string;
     inStock: boolean;
     isActive: boolean;
-    isFeatured: boolean;
-    showInHomepage: boolean;
     image: string;
     discount: {
         type: "percentage" | "fixed";
@@ -74,7 +72,6 @@ interface Product {
     }>;
     status: "active" | "inactive" | "draft";
     featured?: boolean;
-    showInHomepage?: boolean;
     productType?: "single" | "package";
     discount?: {
         type: "percentage" | "fixed";
@@ -119,8 +116,6 @@ export function EditProductDialog({
         lowStockThreshold: "10",
         inStock: true,
         isActive: true,
-        isFeatured: false,
-        showInHomepage: false,
         image: "",
         discount: {
             type: "percentage",
@@ -173,8 +168,6 @@ export function EditProductDialog({
                 lowStockThreshold: product.inventory?.lowStockAlert?.toString() || "10",
                 inStock: (product.inventory?.quantity ?? 0) > 0,
                 isActive: product.status === "active",
-                isFeatured: product.featured || false,
-                showInHomepage: product.showInHomepage || false,
                 image: imageUrl,
                 discount: {
                     type: product.discount?.type || "percentage",
@@ -357,8 +350,6 @@ export function EditProductDialog({
                     trackInventory: true,
                 },
                 status: formData.isActive ? "active" : "inactive",
-                featured: formData.isFeatured,
-                showInHomepage: formData.showInHomepage,
                 images: finalImages,
                 discount: {
                     type: formData.discount.type,
@@ -630,16 +621,8 @@ export function EditProductDialog({
                                             onCheckedChange={(checked) => handleSwitchChange("isActive", checked)}
                                         />
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <Label>Featured</Label>
-                                            <p className="text-xs text-muted-foreground">Show on homepage</p>
-                                        </div>
-                                        <Switch
-                                            checked={formData.isFeatured}
-                                            onCheckedChange={(checked) => handleSwitchChange("isFeatured", checked)}
-                                        />
-                                    </div>
+
+
                                 </div>
                             </div>
 

@@ -170,6 +170,9 @@ function OrderStatusBadge({ status }: { status: string }) {
 
 
 
+import { DashboardSkeleton } from "~/ui/components/admin/dashboard-skeleton";
+
+
 export default function AdminDashboardPage() {
   const [data, setData] = React.useState<DashboardData | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -220,10 +223,7 @@ export default function AdminDashboardPage() {
   }, [fetchDashboardData]);
 
   if (loading) {
-    return <div className="p-8 text-center flex flex-col items-center gap-4">
-      <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-      <span className="text-muted-foreground">Loading dashboard...</span>
-    </div>;
+    return <DashboardSkeleton />;
   }
 
   if (!data) return <div className="p-8 text-center">Failed to load dashboard data.</div>;

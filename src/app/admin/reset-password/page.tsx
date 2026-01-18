@@ -25,23 +25,51 @@ function ResetPasswordContent() {
         newPassword: "",
         confirmPassword: "",
     });
+    const [errors, setErrors] = React.useState<Record<string, string>>({});
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
+        const { id, value } = e.target;
+        setFormData((prev) => ({ ...prev, [id]: value }));
+        if (errors[id]) {
+            setErrors((prev) => {
+                const next = { ...prev };
+                delete next[id];
+                return next;
+            });
+        }
+    };
+
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {};
+
+        // OTP
+        if (!formData.otp) {
+            newErrors.otp = "Reset code is required";
+        } else if (formData.otp.length < 4) {
+            newErrors.otp = "Please enter a valid reset code";
+        }
+
+        // New Password
+        if (!formData.newPassword) {
+            newErrors.newPassword = "New password is required";
+        } else if (formData.newPassword.length < 8) {
+            newErrors.newPassword = "Password must be at least 8 characters long";
+        } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(formData.newPassword)) {
+            newErrors.newPassword = "Password must contain lowercase, uppercase, number and special character";
+        }
+
+        // Confirm Password
+        if (formData.newPassword !== formData.confirmPassword) {
+            newErrors.confirmPassword = "Passwords do not match";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (formData.newPassword !== formData.confirmPassword) {
-            toast.error("Passwords do not match.");
-            return;
-        }
-
-        if (formData.otp.length < 4) {
-            toast.error("Please enter a valid reset code.");
-            return;
-        }
+        if (!validateForm()) return;
 
         setIsLoading(true);
 
@@ -97,7 +125,11 @@ function ResetPasswordContent() {
                                 onChange={handleChange}
                                 required
                                 disabled={isLoading}
+                                className={errors.otp ? "border-destructive text-destructive" : ""}
                             />
+                            {errors.otp && (
+                                <p className="text-xs text-destructive mt-1">{errors.otp}</p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="newPassword">New Password</Label>
@@ -110,7 +142,11 @@ function ResetPasswordContent() {
                                     onChange={handleChange}
                                     required
                                     disabled={isLoading}
+                                    className={errors.newPassword ? "border-destructive text-destructive" : ""}
                                 />
+                                {errors.newPassword && (
+                                    <p className="text-xs text-destructive mt-1">{errors.newPassword}</p>
+                                )}
                                 <Button
                                     type="button"
                                     variant="ghost"
@@ -132,7 +168,11 @@ function ResetPasswordContent() {
                                 onChange={handleChange}
                                 required
                                 disabled={isLoading}
+                                className={errors.confirmPassword ? "border-destructive text-destructive" : ""}
                             />
+                            {errors.confirmPassword && (
+                                <p className="text-xs text-destructive mt-1">{errors.confirmPassword}</p>
+                            )}
                         </div>
                         <Button type="submit" className="w-full" disabled={isLoading}>
                             {isLoading ? (

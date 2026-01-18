@@ -1,6 +1,26 @@
 "use client";
 
 import {
+  AccountSettingsSkeleton,
+  AdminTableSkeleton,
+  BannerTableSkeleton,
+  CouponStatsSkeleton,
+  CouponTableSkeleton,
+  OrderStatsSkeleton,
+  OrderTableSkeleton,
+  PackageTableSkeleton,
+  PaymentMethodSkeleton,
+  PaymentMethodsTableSkeleton,
+  PaymentStatsSkeleton,
+  PaymentTableSkeleton,
+  ProductStatsSkeleton,
+  ProductTableSkeleton,
+  SecuritySettingsSkeleton,
+  ShippingFeeTableSkeleton,
+  TransactionStatsSkeleton,
+  TransactionTableSkeleton,
+} from "~/ui/components/admin/product-skeletons";
+import {
   ArrowDown,
   ArrowUp,
   Calendar,
@@ -365,11 +385,7 @@ function ShippingFeesTab() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
+                  <ShippingFeeTableSkeleton />
                 ) : filteredFees.length === 0 ? (
                   <TableRow>
                     <TableCell
@@ -950,16 +966,11 @@ function PaymentMethodsTab() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
+                  <PaymentMethodsTableSkeleton />
                 ) : filteredMethods.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="h-24 text-center text-muted-foreground"
                     >
                       No payment methods found.
                     </TableCell>
@@ -1463,13 +1474,7 @@ function AccountSettingsTab() {
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
+    return <AccountSettingsSkeleton />;
   }
 
   return (
@@ -2030,11 +2035,7 @@ function BannersTab() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
+                  <BannerTableSkeleton />
                 ) : filteredBanners.length === 0 ? (
                   <TableRow>
                     <TableCell
@@ -2777,11 +2778,7 @@ function AdminsTab() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
+                  <AdminTableSkeleton />
                 ) : filteredAdmins.length === 0 ? (
                   <TableRow>
                     <TableCell

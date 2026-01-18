@@ -18,6 +18,12 @@ import {
   CardHeader,
   CardTitle,
 } from "~/ui/primitives/card";
+import {
+  CategorySkeleton,
+  ProductSkeleton,
+  PackageSkeleton,
+} from "~/ui/components/home-skeletons";
+
 
 
 const featuresWhyChooseUs = [
@@ -163,7 +169,7 @@ export default function HomePage() {
   }, []);
 
   React.useEffect(() => {
-    fetch("/api/user/products?productType=single&showInHomepage=true")
+    fetch("/api/user/products?productType=single&page=1&limit=10")
       .then((res) => res.json())
       .then((data: any) => {
         if (data.success && Array.isArray(data.data)) {
@@ -433,9 +439,7 @@ export default function HomePage() {
               `}
             >
               {catLoading ? (
-                <div className="col-span-4 flex justify-center items-center py-12">
-                  <span className="text-muted-foreground">Loading categories...</span>
-                </div>
+                <CategorySkeleton />
               ) : categories.length === 0 ? (
                 <div className="col-span-4 flex justify-center items-center py-12">
                   <span className="text-muted-foreground">No categories found.</span>
@@ -508,9 +512,7 @@ export default function HomePage() {
               `}
             >
               {prodLoading ? (
-                <div className="col-span-4 flex justify-center items-center py-12">
-                  <span className="text-muted-foreground">Loading products...</span>
-                </div>
+                <ProductSkeleton />
               ) : products.length === 0 ? (
                 <div className="col-span-4 flex justify-center items-center py-12">
                   <span className="text-muted-foreground">No products found.</span>
@@ -588,9 +590,7 @@ export default function HomePage() {
               `}
             >
               {pkgLoading ? (
-                <div className="col-span-3 flex justify-center items-center py-12">
-                  <span className="text-muted-foreground">Loading packages...</span>
-                </div>
+                <PackageSkeleton />
               ) : packages.length === 0 ? (
                 <div className="col-span-3 flex justify-center items-center py-12">
                   <span className="text-muted-foreground">No packages found.</span>

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
+import { CategoryTableSkeleton } from "~/ui/components/admin/product-skeletons";
 
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
@@ -255,11 +256,7 @@ export function CategoryManager({ onUpdate }: CategoryManagerProps) {
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">
-                                            <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                                        </TableCell>
-                                    </TableRow>
+                                    <CategoryTableSkeleton />
                                 ) : filteredCategories.map((cat) => (
                                     <TableRow key={cat._id}>
                                         <TableCell className="font-medium">

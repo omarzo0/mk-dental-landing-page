@@ -17,6 +17,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { cn } from "~/lib/cn";
+import { CouponStatsSkeleton, CouponTableSkeleton } from "~/ui/components/admin/product-skeletons";
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
 import {
@@ -213,11 +214,11 @@ export default function AdminCouponsPage() {
   const [loading, setLoading] = React.useState(true);
   const [typeFilter, setTypeFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("all");
-  
+
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [couponToDelete, setCouponToDelete] = React.useState<Coupon | null>(null);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
-  
+
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
   const [editingCoupon, setEditingCoupon] = React.useState<Coupon | null>(null);
   const [saveLoading, setSaveLoading] = React.useState(false);
@@ -248,7 +249,7 @@ export default function AdminCouponsPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem("mk-dental-token");
-      
+
       if (!token) {
         toast.error("Session expired. Please log in again.");
         window.location.href = "/admin/login?expired=true";
@@ -302,7 +303,7 @@ export default function AdminCouponsPage() {
         coupon.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
         coupon.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         coupon.description.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       return matchesSearch;
     });
   }, [coupons, searchQuery]);
@@ -318,7 +319,7 @@ export default function AdminCouponsPage() {
     setDeleteLoading(true);
     try {
       const token = localStorage.getItem("mk-dental-token");
-      
+
       if (!token) {
         toast.error("Session expired. Please log in again.");
         window.location.href = "/admin/login?expired=true";
@@ -365,7 +366,7 @@ export default function AdminCouponsPage() {
   const handleToggleActive = async (coupon: Coupon) => {
     try {
       const token = localStorage.getItem("mk-dental-token");
-      
+
       if (!token) {
         toast.error("Session expired. Please log in again.");
         window.location.href = "/admin/login?expired=true";
@@ -455,7 +456,7 @@ export default function AdminCouponsPage() {
     setSaveLoading(true);
     try {
       const token = localStorage.getItem("mk-dental-token");
-      
+
       if (!token) {
         toast.error("Session expired. Please log in again.");
         window.location.href = "/admin/login?expired=true";
@@ -572,44 +573,48 @@ export default function AdminCouponsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Coupons</CardTitle>
-            <Tag className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statistics?.totalCoupons || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Coupons</CardTitle>
-            <Percent className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{statistics?.activeCoupons || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expired</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{statistics?.expiredCoupons || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Usage</CardTitle>
-            <Tag className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{(statistics?.totalUsage || 0).toLocaleString()}</div>
-          </CardContent>
-        </Card>
-      </div>
+      {loading && !statistics ? (
+        <CouponStatsSkeleton />
+      ) : statistics ? (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Coupons</CardTitle>
+              <Tag className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{statistics.totalCoupons}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Coupons</CardTitle>
+              <Percent className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{statistics.activeCoupons}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Expired</CardTitle>
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{statistics.expiredCoupons}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Usage</CardTitle>
+              <Tag className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{statistics.totalUsage.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
 
       {/* Filters & Search */}
       <Card>
@@ -673,11 +678,7 @@ export default function AdminCouponsPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
+                  <CouponTableSkeleton />
                 ) : filteredCoupons.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">

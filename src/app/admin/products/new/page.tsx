@@ -47,8 +47,6 @@ interface ProductFormData {
   lowStockThreshold: string;
   inStock: boolean;
   isActive: boolean;
-  isFeatured: boolean;
-  showInHomepage: boolean;
   image: string;
   discount: {
     type: "percentage" | "fixed";
@@ -73,8 +71,6 @@ export default function NewProductPage() {
     lowStockThreshold: "10",
     inStock: true,
     isActive: true,
-    isFeatured: false,
-    showInHomepage: false,
     image: "",
     discount: {
       type: "percentage",
@@ -269,8 +265,6 @@ export default function NewProductPage() {
           trackInventory: true,
         },
         status: formData.isActive ? "active" : "inactive",
-        featured: formData.isFeatured,
-        showInHomepage: formData.showInHomepage,
         productType: "single",
         images: uploadedUrls, // Always send as array
         discount: {
@@ -547,20 +541,8 @@ export default function NewProductPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Show in Homepage</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Display in Featured section
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.showInHomepage}
-                      onCheckedChange={(checked) =>
-                        handleSwitchChange("showInHomepage", checked)
-                      }
-                    />
-                  </div>
+
+
                 </div>
               </CardContent>
             </Card>
@@ -629,20 +611,8 @@ export default function NewProductPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Featured</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Show on homepage
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.isFeatured}
-                    onCheckedChange={(checked) =>
-                      handleSwitchChange("isFeatured", checked)
-                    }
-                  />
-                </div>
+
+
               </CardContent>
             </Card>
 

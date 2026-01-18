@@ -8,7 +8,9 @@ import { toast } from "sonner";
 
 import { useCart } from "~/lib/hooks/use-cart";
 import { useWishlist } from "~/lib/hooks/use-wishlist";
+import { useMounted } from "~/lib/hooks/use-mounted";
 import { Badge } from "~/ui/primitives/badge";
+
 import { resolveImageUrl } from "~/lib/image-utils";
 import { Button } from "~/ui/primitives/button";
 import {
@@ -16,10 +18,14 @@ import {
   CardContent,
   CardFooter,
 } from "~/ui/primitives/card";
+import { ProductSkeleton } from "~/ui/components/home-skeletons";
+
 
 export default function WishlistPage() {
+  const mounted = useMounted();
   const { items, removeItem, clearWishlist, itemCount } = useWishlist();
   const { addItem: addToCart } = useCart();
+
 
   const handleMoveToCart = (item: (typeof items)[0]) => {
     addToCart(
@@ -117,7 +123,18 @@ export default function WishlistPage() {
           </div>
 
           {/* Wishlist items */}
-          {items.length === 0 ? (
+          {!mounted ? (
+            <div
+              className={`
+                mx-auto grid max-w-5xl grid-cols-1 gap-4
+                sm:grid-cols-2 sm:gap-5
+                lg:grid-cols-3 lg:gap-6
+              `}
+            >
+              <ProductSkeleton />
+            </div>
+          ) : items.length === 0 ? (
+
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
                 <Heart className="h-10 w-10 text-muted-foreground" />
@@ -193,7 +210,7 @@ export default function WishlistPage() {
                         <span className="text-base font-bold text-foreground sm:text-lg">
                           {item.price.toFixed(2)} EGP
                         </span>
-                        {item.originalPrice && (
+                        {item.originalPrice && item.originalPrice > item.price && (
                           <span className="text-sm text-muted-foreground line-through">
                             {item.originalPrice.toFixed(2)} EGP
                           </span>

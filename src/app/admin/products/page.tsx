@@ -69,6 +69,7 @@ import {
 import { CategoryManager } from "./category-manager";
 import { PackageManager } from "./package-manager";
 import { EditProductDialog } from "./edit-product-dialog";
+import { ProductStatsSkeleton, ProductTableSkeleton } from "~/ui/components/admin/product-skeletons";
 
 // Product type from API
 interface Product {
@@ -455,7 +456,9 @@ export default function AdminProductsPage() {
           </div>
 
           {/* Statistics Cards */}
-          {statistics && (
+          {loading && !statistics ? (
+            <ProductStatsSkeleton />
+          ) : statistics ? (
             <div className="grid gap-4 md:grid-cols-4">
               <Card>
                 <CardHeader className="pb-2">
@@ -482,7 +485,7 @@ export default function AdminProductsPage() {
                 </CardHeader>
               </Card>
             </div>
-          )}
+          ) : null}
 
           {/* Bulk Actions */}
           {selectedProducts.length > 0 && (
@@ -598,11 +601,7 @@ export default function AdminProductsPage() {
                   </TableHeader>
                   <TableBody>
                     {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="h-24 text-center">
-                          <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                        </TableCell>
-                      </TableRow>
+                      <ProductTableSkeleton />
                     ) : products.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={8} className="h-24 text-center">
@@ -892,6 +891,6 @@ export default function AdminProductsPage() {
         product={productToEdit}
         onSuccess={fetchProducts}
       />
-    </div>
+    </div >
   );
 }

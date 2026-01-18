@@ -38,6 +38,12 @@ export async function GET(req: NextRequest) {
 
 
 
+
+
+
+
+
+
     // Explicitly filter by subcategory if requested
     const subcategory = searchParams.get('subcategory');
     const isDebug = searchParams.get('debug') === 'true';

@@ -52,6 +52,8 @@ import {
 } from "~/ui/primitives/sheet";
 import { Separator } from "~/ui/primitives/separator";
 import { Slider } from "~/ui/primitives/slider";
+import { ProductSkeleton, SidebarCategorySkeleton } from "~/ui/components/home-skeletons";
+
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -401,57 +403,61 @@ function ProductsContent() {
             All Categories
           </button>
 
-          {displayCategories.map((category) => (
-            <div key={category.name}>
-              <button
-                className={`flex items-center w-full px-2 py-1.5 rounded text-sm transition-colors ${selectedCategory === category.name
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "hover:bg-muted"
-                  }`}
-                onClick={() => {
-                  setSelectedCategory(category.name);
-                  setSelectedSubcategory(null);
-                  setCurrentPage(1);
-                }}
-              >
-                <span className="mr-2 text-lg">{category.icon || "🦷"}</span>
-                {category.name}
-              </button>
+          {categoriesLoading ? (
+            <SidebarCategorySkeleton />
+          ) : (
+            displayCategories.map((category) => (
+              <div key={category.name}>
+                <button
+                  className={`flex items-center w-full px-2 py-1.5 rounded text-sm transition-colors ${selectedCategory === category.name
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted"
+                    }`}
+                  onClick={() => {
+                    setSelectedCategory(category.name);
+                    setSelectedSubcategory(null);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <span className="mr-2 text-lg">{category.icon || "🦷"}</span>
+                  {category.name}
+                </button>
 
-              {/* Render Subcategories if category matches */}
-              {/* Alternatively, always show expand logic, but simpler to show when parent selected or always if small list. 
-                    Let's show when parent selected OR allow user to see structure. 
-                    Given standard e-com patterns: show subcategories indented. 
-                */}
-              {(selectedCategory === category.name || category.subcategories?.some(s => {
-                const sName = typeof s === 'string' ? s : s.name;
-                return sName === selectedSubcategory;
-              })) && category.subcategories && category.subcategories.length > 0 && (
-                  <div className="ml-4 mt-1 border-l-2 pl-2 space-y-1">
-                    {category.subcategories.map(sub => {
-                      const subName = typeof sub === 'string' ? sub : sub.name;
-                      return (
-                        <button
-                          key={subName}
-                          className={`block w-full text-left px-2 py-1 rounded text-xs transition-colors ${selectedSubcategory === subName
-                            ? "text-primary font-medium"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCategory(category.name);
-                            setSelectedSubcategory(subName);
-                            setCurrentPage(1);
-                          }}
-                        >
-                          {subName}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-            </div>
-          ))}
+                {/* Render Subcategories if category matches */}
+                {/* Alternatively, always show expand logic, but simpler to show when parent selected or always if small list. 
+                      Let's show when parent selected OR allow user to see structure. 
+                      Given standard e-com patterns: show subcategories indented. 
+                  */}
+                {(selectedCategory === category.name || category.subcategories?.some(s => {
+                  const sName = typeof s === 'string' ? s : s.name;
+                  return sName === selectedSubcategory;
+                })) && category.subcategories && category.subcategories.length > 0 && (
+                    <div className="ml-4 mt-1 border-l-2 pl-2 space-y-1">
+                      {category.subcategories.map(sub => {
+                        const subName = typeof sub === 'string' ? sub : sub.name;
+                        return (
+                          <button
+                            key={subName}
+                            className={`block w-full text-left px-2 py-1 rounded text-xs transition-colors ${selectedSubcategory === subName
+                              ? "text-primary font-medium"
+                              : "text-muted-foreground hover:text-foreground"
+                              }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCategory(category.name);
+                              setSelectedSubcategory(subName);
+                              setCurrentPage(1);
+                            }}
+                          >
+                            {subName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -730,8 +736,14 @@ function ProductsContent() {
 
               {/* Product grid */}
               {productsLoading ? (
-                <div className="col-span-full flex justify-center items-center py-12">
-                  <span className="text-muted-foreground">Loading products...</span>
+                <div
+                  className={
+                    viewMode === "grid"
+                      ? "grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 sm:gap-5"
+                      : "space-y-6"
+                  }
+                >
+                  <ProductSkeleton />
                 </div>
               ) : (
                 <div

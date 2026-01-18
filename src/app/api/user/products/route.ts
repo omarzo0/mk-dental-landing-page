@@ -35,6 +35,12 @@ export async function GET(request: Request) {
 
 
 
+
+
+
+
+
+
     // Explicitly filter by subcategory if requested
     const subcategory = searchParams.get('subcategory');
     if (subcategory && data.success && data.data) {

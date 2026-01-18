@@ -41,6 +41,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "~/ui/primitives/sheet";
+import { CartItemSkeleton } from "./home-skeletons";
+
 
 interface CartClientProps {
   className?: string;
@@ -313,7 +315,13 @@ export function CartClient({ className }: CartClientProps) {
       {/* Cart Items */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
         <AnimatePresence mode="popLayout">
-          {cartItems.length === 0 ? (
+          {!isMounted ? (
+            <div className="space-y-3">
+              <CartItemSkeleton />
+              <CartItemSkeleton />
+              <CartItemSkeleton />
+            </div>
+          ) : cartItems.length === 0 ? (
             EmptyCart
           ) : (
             <div className="space-y-3">

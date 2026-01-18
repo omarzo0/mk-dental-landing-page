@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
+import { OrderStatsSkeleton, OrderTableSkeleton } from "~/ui/components/admin/product-skeletons";
 
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
@@ -690,34 +691,38 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Orders</CardDescription>
-            <CardTitle className="text-2xl">{stats?.totalOrders || 0}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Revenue</CardDescription>
-            <CardTitle className="text-2xl">{stats?.totalRevenue.toFixed(2) || 0} EGP</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Average Order Value</CardDescription>
-            <CardTitle className="text-2xl">{stats?.averageOrderValue.toFixed(2) || 0} EGP</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Active Orders</CardDescription>
-            <CardTitle className="text-2xl text-blue-600">
-              {orders.filter(o => ["pending", "processing", "shipped"].includes(o.status)).length}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
+      {loading && !stats ? (
+        <OrderStatsSkeleton />
+      ) : stats ? (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Orders</CardDescription>
+              <CardTitle className="text-2xl">{stats.totalOrders}</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Revenue</CardDescription>
+              <CardTitle className="text-2xl">{stats.totalRevenue.toFixed(2)} EGP</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Average Order Value</CardDescription>
+              <CardTitle className="text-2xl">{stats.averageOrderValue.toFixed(2)} EGP</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Active Orders</CardDescription>
+              <CardTitle className="text-2xl text-blue-600">
+                {orders.filter(o => ["pending", "processing", "shipped"].includes(o.status)).length}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      ) : null}
 
       {/* Orders Table */}
       <Card>
@@ -769,11 +774,7 @@ export default function AdminOrdersPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
+                  <OrderTableSkeleton />
                 ) : orders.map((order) => (
                   <TableRow key={order._id}>
                     <TableCell className="font-medium">{order.orderNumber}</TableCell>

@@ -64,8 +64,6 @@ interface FormData {
   state: string;
   zip: string;
   country: string;
-  gender: string;
-  dateOfBirth: string;
   notes: string;
   saveAddress: boolean;
   cardNumber: string;
@@ -98,7 +96,84 @@ export default function CheckoutPage() {
 
   const [shippingFees, setShippingFees] = React.useState<{ id: string; name: string; fee: number }[]>([]);
   const [selectedShippingFee, setSelectedShippingFee] = React.useState(0);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
+  const validateStep = (step: CheckoutStep): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (step === "information") {
+      // Email
+      if (!formData.email) {
+        newErrors.email = "Email is required";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = "Please provide a valid email";
+      }
+
+      // First Name
+      if (!formData.firstName.trim()) {
+        newErrors.firstName = "First name is required";
+      } else if (formData.firstName.length < 2 || formData.firstName.length > 50) {
+        newErrors.firstName = "First name must be between 2 and 50 characters";
+      }
+
+      // Last Name
+      if (!formData.lastName.trim()) {
+        newErrors.lastName = "Last name is required";
+      } else if (formData.lastName.length < 2 || formData.lastName.length > 50) {
+        newErrors.lastName = "Last name must be between 2 and 50 characters";
+      }
+
+      // Phone
+      if (!formData.phone) {
+        newErrors.phone = "Phone number is required";
+      } else if (!/^\+?[0-9]{10,15}$/.test(formData.phone.replace(/\s/g, ""))) {
+        newErrors.phone = "Please provide a valid phone number (10-15 digits)";
+      }
+
+      // Street Address
+      if (!formData.address.trim()) {
+        newErrors.address = "Street address is required";
+      } else if (formData.address.length > 255) {
+        newErrors.address = "Street address cannot exceed 255 characters";
+      }
+
+      // City
+      if (!formData.city.trim()) {
+        newErrors.city = "City is required";
+      } else if (formData.city.length > 100) {
+        newErrors.city = "City cannot exceed 100 characters";
+      }
+
+      // State / Governorate
+      if (!formData.state) {
+        newErrors.state = "State / Governorate is required";
+      }
+
+      // Zip
+      if (!formData.zip.trim()) {
+        newErrors.zip = "Zip code is required";
+      }
+
+      // Notes (Optional)
+      if (formData.notes && formData.notes.length > 500) {
+        newErrors.notes = "Order notes cannot exceed 500 characters";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
   React.useEffect(() => {
     const fetchShippingFees = async () => {
       console.log("Fetching shipping fees...");
@@ -159,8 +234,6 @@ export default function CheckoutPage() {
     state: "",
     zip: "",
     country: "Egypt",
-    gender: "male",
-    dateOfBirth: "1990-01-01",
     notes: "",
     saveAddress: false,
     cardNumber: "",
@@ -257,9 +330,14 @@ export default function CheckoutPage() {
   };
 
   const goToNextStep = () => {
-    const nextIndex = currentStepIndex + 1;
-    if (nextIndex < stepOrder.length) {
-      setCurrentStep(stepOrder[nextIndex]);
+    if (validateStep(currentStep)) {
+      const nextIndex = currentStepIndex + 1;
+      if (nextIndex < stepOrder.length) {
+        setCurrentStep(stepOrder[nextIndex]);
+        window.scrollTo(0, 0);
+      }
+    } else {
+      toast.error("Please fix the errors before continuing");
     }
   };
 
@@ -271,6 +349,12 @@ export default function CheckoutPage() {
   };
 
   const handleSubmitOrder = async () => {
+    if (!validateStep("information")) {
+      toast.error("Please fix the errors in the Information step before placing your order");
+      setCurrentStep("information");
+      return;
+    }
+
     setIsProcessing(true);
 
     // Filter out items with invalid product IDs (must be non-empty string, valid MongoDB ObjectId format)
@@ -298,8 +382,6 @@ export default function CheckoutPage() {
         firstName: formData.firstName || user?.name?.split(" ")[0] || "Guest",
         lastName: formData.lastName || user?.name?.split(" ")[1] || "User",
         phone: formData.phone,
-        gender: formData.gender,
-        dateOfBirth: formData.dateOfBirth
       },
       items: validItems.map(item => ({
         productId: item.id,
@@ -465,11 +547,15 @@ export default function CheckoutPage() {
                           type="email"
                           value={formData.email}
                           onChange={(e) =>
-                            setFormData({ ...formData, email: e.target.value })
+                            handleInputChange("email", e.target.value)
                           }
                           placeholder="john@example.com"
                           required
+                          className={errors.email ? "border-destructive" : ""}
                         />
+                        {errors.email && (
+                          <p className="text-xs text-destructive mt-1">{errors.email}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
@@ -478,46 +564,18 @@ export default function CheckoutPage() {
                           type="tel"
                           value={formData.phone}
                           onChange={(e) =>
-                            setFormData({ ...formData, phone: e.target.value })
+                            handleInputChange("phone", e.target.value)
                           }
                           placeholder="+20 100 000 0000"
                           required
+                          className={errors.phone ? "border-destructive" : ""}
                         />
+                        {errors.phone && (
+                          <p className="text-xs text-destructive mt-1">{errors.phone}</p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="gender">Gender</Label>
-                        <Select
-                          value={formData.gender}
-                          onValueChange={(value) =>
-                            setFormData({ ...formData, gender: value })
-                          }
-                        >
-                          <SelectTrigger id="gender">
-                            <SelectValue placeholder="Select gender" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="male">Male</SelectItem>
-                            <SelectItem value="female">Female</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dob">Date of Birth</Label>
-                        <Input
-                          id="dob"
-                          type="date"
-                          value={formData.dateOfBirth}
-                          onChange={(e) =>
-                            setFormData({ ...formData, dateOfBirth: e.target.value })
-                          }
-                          required
-                        />
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
 
@@ -533,11 +591,15 @@ export default function CheckoutPage() {
                           id="firstName"
                           value={formData.firstName}
                           onChange={(e) =>
-                            setFormData({ ...formData, firstName: e.target.value })
+                            handleInputChange("firstName", e.target.value)
                           }
                           placeholder="First Name"
                           required
+                          className={errors.firstName ? "border-destructive" : ""}
                         />
+                        {errors.firstName && (
+                          <p className="text-xs text-destructive mt-1">{errors.firstName}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="lastName">Last Name</Label>
@@ -545,11 +607,15 @@ export default function CheckoutPage() {
                           id="lastName"
                           value={formData.lastName}
                           onChange={(e) =>
-                            setFormData({ ...formData, lastName: e.target.value })
+                            handleInputChange("lastName", e.target.value)
                           }
                           placeholder="Last Name"
                           required
+                          className={errors.lastName ? "border-destructive" : ""}
                         />
+                        {errors.lastName && (
+                          <p className="text-xs text-destructive mt-1">{errors.lastName}</p>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -558,11 +624,15 @@ export default function CheckoutPage() {
                         id="address"
                         value={formData.address}
                         onChange={(e) =>
-                          setFormData({ ...formData, address: e.target.value })
+                          handleInputChange("address", e.target.value)
                         }
                         placeholder="Street name, building number"
                         required
+                        className={errors.address ? "border-destructive" : ""}
                       />
+                      {errors.address && (
+                        <p className="text-xs text-destructive mt-1">{errors.address}</p>
+                      )}
                     </div>
                     <div className="grid gap-4 sm:grid-cols-3">
                       <div className="space-y-2">
@@ -571,11 +641,15 @@ export default function CheckoutPage() {
                           id="city"
                           value={formData.city}
                           onChange={(e) =>
-                            setFormData({ ...formData, city: e.target.value })
+                            handleInputChange("city", e.target.value)
                           }
                           placeholder="City"
                           required
+                          className={errors.city ? "border-destructive" : ""}
                         />
+                        {errors.city && (
+                          <p className="text-xs text-destructive mt-1">{errors.city}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="state">State / Governorate</Label>
@@ -583,13 +657,13 @@ export default function CheckoutPage() {
                           value={formData.state}
                           onValueChange={(value) => {
                             const selected = shippingFees.find(f => f.name === value);
-                            setFormData({ ...formData, state: value });
+                            handleInputChange("state", value);
                             if (selected) {
                               setSelectedShippingFee(selected.fee);
                             }
                           }}
                         >
-                          <SelectTrigger id="state">
+                          <SelectTrigger id="state" className={errors.state ? "border-destructive" : ""}>
                             <SelectValue placeholder="Select state" />
                           </SelectTrigger>
                           <SelectContent>
@@ -600,6 +674,9 @@ export default function CheckoutPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        {errors.state && (
+                          <p className="text-xs text-destructive mt-1">{errors.state}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="zip">ZIP Code</Label>
@@ -607,11 +684,15 @@ export default function CheckoutPage() {
                           id="zip"
                           value={formData.zip}
                           onChange={(e) =>
-                            setFormData({ ...formData, zip: e.target.value })
+                            handleInputChange("zip", e.target.value)
                           }
                           placeholder="ZIP"
                           required
+                          className={errors.zip ? "border-destructive" : ""}
                         />
+                        {errors.zip && (
+                          <p className="text-xs text-destructive mt-1">{errors.zip}</p>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -619,7 +700,7 @@ export default function CheckoutPage() {
                       <Select
                         value={formData.country}
                         onValueChange={(value) =>
-                          setFormData({ ...formData, country: value })
+                          handleInputChange("country", value)
                         }
                       >
                         <SelectTrigger id="country">
@@ -639,11 +720,14 @@ export default function CheckoutPage() {
                         id="notes"
                         value={formData.notes}
                         onChange={(e) =>
-                          setFormData({ ...formData, notes: e.target.value })
+                          handleInputChange("notes", e.target.value)
                         }
                         placeholder="Special instructions for delivery..."
-                        className="min-h-[100px]"
+                        className={`min-h-[100px] ${errors.notes ? "border-destructive" : ""}`}
                       />
+                      {errors.notes && (
+                        <p className="text-xs text-destructive mt-1">{errors.notes}</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -719,8 +803,7 @@ export default function CheckoutPage() {
                         <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Contact Information</h4>
                         <p className="text-sm">
                           {formData.email}<br />
-                          {formData.phone}<br />
-                          {formData.gender} ({formData.dateOfBirth})
+                          {formData.phone}
                         </p>
                         <Button variant="link" size="sm" className="h-auto p-0 mt-2" onClick={() => setCurrentStep("information")}>Edit</Button>
                       </div>
