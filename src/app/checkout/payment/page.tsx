@@ -89,7 +89,7 @@ function PaymentContent() {
                         <div className="flex flex-col items-center gap-4">
                             <Loader2 className="h-16 w-16 animate-spin text-primary" />
                             <p className="text-sm text-muted-foreground">
-                                Confirming your Cash on Delivery order...
+                                Confirming your order...
                             </p>
                         </div>
                     )}

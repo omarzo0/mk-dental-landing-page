@@ -94,6 +94,10 @@ export default function CheckoutPage() {
   const [publicCoupons, setPublicCoupons] = React.useState<any[]>([]);
   const [isLoadingCoupons, setIsLoadingCoupons] = React.useState(false);
 
+  const [paymentMethods, setPaymentMethods] = React.useState<any[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState<string>("cod");
+  const [isLoadingMethods, setIsLoadingMethods] = React.useState(false);
+
   const [shippingFees, setShippingFees] = React.useState<{ id: string; name: string; fee: number }[]>([]);
   const [selectedShippingFee, setSelectedShippingFee] = React.useState(0);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -160,12 +164,58 @@ export default function CheckoutPage() {
       }
     }
 
+    if (step === "payment") {
+      if (selectedPaymentMethod === "kashier") {
+        if (!formData.cardNumber) {
+          newErrors.cardNumber = "Card number is required";
+        } else if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, ""))) {
+          newErrors.cardNumber = "Invalid card number (16 digits required)";
+        }
+
+        if (!formData.cardName) {
+          newErrors.cardName = "Cardholder name is required";
+        }
+
+        if (!formData.expiry) {
+          newErrors.expiry = "Expiry date is required";
+        } else if (!/^\d{2}\/\d{2}$/.test(formData.expiry)) {
+          newErrors.expiry = "Invalid expiry format (MM/YY)";
+        }
+
+        if (!formData.cvc) {
+          newErrors.cvc = "CVC is required";
+        } else if (!/^\d{3,4}$/.test(formData.cvc)) {
+          newErrors.cvc = "Invalid CVC (3 or 4 digits)";
+        }
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    let formattedValue = value;
+
+    if (field === "cardNumber") {
+      // Remove all non-digits and limit to 16
+      const digits = value.replace(/\D/g, "").slice(0, 16);
+      // Group by 4 with spaces
+      formattedValue = digits.match(/.{1,4}/g)?.join(" ") || "";
+    } else if (field === "expiry") {
+      // Remove all non-digits and limit to 4 (MMYY)
+      const digits = value.replace(/\D/g, "").slice(0, 4);
+      if (digits.length >= 3) {
+        formattedValue = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+      } else {
+        formattedValue = digits;
+      }
+    } else if (field === "cvc") {
+      // Remove all non-digits and limit to 4
+      formattedValue = value.replace(/\D/g, "").slice(0, 4);
+    }
+
+    setFormData((prev) => ({ ...prev, [field]: formattedValue }));
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -265,6 +315,37 @@ export default function CheckoutPage() {
 
   const taxAmount = (subtotal - discountAmount) * 0; // Tax 0 as per simplified UI
   const total = subtotal - discountAmount + shippingCost + taxAmount;
+
+  React.useEffect(() => {
+    const fetchPaymentMethods = async () => {
+      if (total <= 0) return;
+
+      setIsLoadingMethods(true);
+      try {
+        const response = await fetch(`/api/user/payments/methods?orderAmount=${total}`);
+        const data = await response.json() as any;
+        if (data.success && data.data && Array.isArray(data.data.methods)) {
+          const methods = data.data.methods;
+          setPaymentMethods(methods);
+          // Set default method if available and not already set properly
+          if (methods.length > 0) {
+            const hasCod = methods.find((m: any) => m.name === "cod");
+            if (hasCod) {
+              setSelectedPaymentMethod("cod");
+            } else {
+              setSelectedPaymentMethod(methods[0].name);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch payment methods:", error);
+      } finally {
+        setIsLoadingMethods(false);
+      }
+    };
+
+    fetchPaymentMethods();
+  }, [total]);
 
   const handleApplyCoupon = async () => {
     const code = couponCode.toUpperCase().trim();
@@ -394,7 +475,13 @@ export default function CheckoutPage() {
         zipCode: formData.zip,
         country: formData.country
       },
-      paymentMethod: "cod",
+      paymentMethod: selectedPaymentMethod === "kashier" ? "credit_card" : selectedPaymentMethod,
+      cardDetails: selectedPaymentMethod === "kashier" ? {
+        cardNumber: formData.cardNumber.replace(/\s/g, ""),
+        cardName: formData.cardName,
+        expiry: formData.expiry,
+        cvc: formData.cvc
+      } : undefined,
       notes: formData.notes,
       ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {})
     };
@@ -452,20 +539,23 @@ export default function CheckoutPage() {
       // Save to sessionStorage for confirmation page
       sessionStorage.setItem('orderConfirmation', JSON.stringify(orderConfirmationData));
 
-      // Clear cart and redirect to payment page
+      // Clear cart
       clearCart();
 
       const orderNumber = data.data?.order?.orderNumber;
       const email = encodeURIComponent(formData.email);
 
-      // Skip payment processing for COD orders to prevent automatic "completed" status
-      if (formData.billingAddress === "same" || true) { // We are currently hardcoded to "cod" as per line 307
+      // Handle Redirection based on payment method
+      // If it's COD, go to confirmation
+      if (selectedPaymentMethod === "cod") {
         router.push(`/checkout/confirmation?orderId=${orderNumber || data.data?.order?._id}`);
       } else {
+        // For online payments, we expect a payment ID to redirect to a payment page
         const paymentId = data.data?.payment?.id;
         if (paymentId && orderNumber) {
           router.push(`/checkout/payment?paymentId=${paymentId}&orderNumber=${orderNumber}&email=${email}`);
         } else {
+          // Fallback if no payment ID is returned
           router.push(`/checkout/confirmation?orderId=${orderNumber || data.data?.order?._id}`);
         }
       }
@@ -747,23 +837,119 @@ export default function CheckoutPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Truck className="h-5 w-5" />
+                      <CreditCard className="h-5 w-5" />
                       Payment Method
                     </CardTitle>
                     <CardDescription>
-                      Currently only Cash on Delivery (COD) is supported
+                      Choose how you'd like to pay for your order
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="rounded-lg border-2 border-primary bg-primary/5 p-4 flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                        <Check className="h-6 w-6" />
+                    {isLoadingMethods ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
                       </div>
-                      <div>
-                        <h4 className="font-semibold">Cash on Delivery</h4>
-                        <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
+                    ) : paymentMethods.length === 0 ? (
+                      <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
+                        No payment methods available for this order amount.
                       </div>
-                    </div>
+                    ) : (
+                      <div className="grid gap-4">
+                        {paymentMethods.map((method) => {
+                          const isSelected = selectedPaymentMethod === method.name;
+                          return (
+                            <React.Fragment key={method.name}>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedPaymentMethod(method.name)}
+                                className={`flex items-center justify-between rounded-lg border-2 p-4 text-left transition-all ${isSelected
+                                  ? "border-primary bg-primary/5"
+                                  : "border-muted hover:border-primary/50"
+                                  }`}
+                              >
+                                <div className="flex items-center gap-4">
+                                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                    }`}>
+                                    {isSelected ? <Check className="h-6 w-6" /> : <CreditCard className="h-5 w-5" />}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold">{method.displayName}</h4>
+                                    <p className="text-sm text-muted-foreground">{method.description}</p>
+                                  </div>
+                                </div>
+                                {method.fees && method.fees.value > 0 && (
+                                  <Badge variant="secondary">
+                                    +{method.fees.value}{method.fees.type === "percentage" ? "%" : " EGP"} Fee
+                                  </Badge>
+                                )}
+                              </button>
+
+                              {isSelected && method.name === "kashier" && (
+                                <div className="mt-2 space-y-4 rounded-lg bg-muted/50 p-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                  <h4 className="font-medium text-sm mb-2">Credit Card Details</h4>
+                                  <div className="space-y-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="cardNumber">Card Number</Label>
+                                      <Input
+                                        id="cardNumber"
+                                        placeholder="0000 0000 0000 0000"
+                                        value={formData.cardNumber}
+                                        onChange={(e) => handleInputChange("cardNumber", e.target.value)}
+                                        className={errors.cardNumber ? "border-destructive" : ""}
+                                      />
+                                      {errors.cardNumber && (
+                                        <p className="text-xs text-destructive">{errors.cardNumber}</p>
+                                      )}
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="cardName">Name on Card</Label>
+                                      <Input
+                                        id="cardName"
+                                        placeholder="Full Name"
+                                        value={formData.cardName}
+                                        onChange={(e) => handleInputChange("cardName", e.target.value)}
+                                        className={errors.cardName ? "border-destructive" : ""}
+                                      />
+                                      {errors.cardName && (
+                                        <p className="text-xs text-destructive">{errors.cardName}</p>
+                                      )}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div className="space-y-2">
+                                        <Label htmlFor="expiry">Expiry Date</Label>
+                                        <Input
+                                          id="expiry"
+                                          placeholder="MM/YY"
+                                          value={formData.expiry}
+                                          onChange={(e) => handleInputChange("expiry", e.target.value)}
+                                          className={errors.expiry ? "border-destructive" : ""}
+                                        />
+                                        {errors.expiry && (
+                                          <p className="text-xs text-destructive">{errors.expiry}</p>
+                                        )}
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="cvc">CVC</Label>
+                                        <Input
+                                          id="cvc"
+                                          placeholder="123"
+                                          value={formData.cvc}
+                                          onChange={(e) => handleInputChange("cvc", e.target.value)}
+                                          className={errors.cvc ? "border-destructive" : ""}
+                                        />
+                                        {errors.cvc && (
+                                          <p className="text-xs text-destructive">{errors.cvc}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -811,7 +997,9 @@ export default function CheckoutPage() {
                     <Separator />
                     <div>
                       <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Payment Method</h4>
-                      <p className="text-sm">Cash on Delivery (COD)</p>
+                      <p className="text-sm">
+                        {paymentMethods.find(m => m.name === selectedPaymentMethod)?.displayName || selectedPaymentMethod.toUpperCase()}
+                      </p>
                     </div>
                     {formData.notes && (
                       <>

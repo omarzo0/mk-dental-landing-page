@@ -238,7 +238,7 @@ export const paymentMethodSchema = z.object({
         .trim()
         .min(2, "Name must be at least 2 characters")
         .max(50, "Name cannot exceed 50 characters")
-        .regex(/^[a-z_]+$/, "Name must be lowercase letters and underscores only"),
+        .regex(/^[^\s]+$/, "Name cannot contain spaces"),
     displayName: z.string()
         .trim()
         .max(100, "Display name cannot exceed 100 characters")
@@ -263,11 +263,11 @@ export const paymentMethodSchema = z.object({
     testMode: z.boolean().default(false),
     fees: z.object({
         type: z.enum(["fixed", "percentage"]),
-        value: z.number().min(0, "Fee value must be a positive number"),
+        value: z.coerce.number().min(0, "Fee value must be a positive number"),
     }).nullable().optional(),
-    minAmount: z.number().min(0, "Minimum amount must be a positive number").optional().nullable(),
-    maxAmount: z.number().min(0, "Maximum amount must be a positive number").optional().nullable(),
-    order: z.number().int().min(0, "Order must be a non-negative integer").default(0),
+    minAmount: z.coerce.number().min(0, "Minimum amount must be a positive number").optional().nullable(),
+    maxAmount: z.coerce.number().min(0, "Maximum amount must be a positive number").optional().nullable(),
+    order: z.coerce.number().int().min(0, "Order must be a non-negative integer").default(0).optional().nullable(),
 });
 
 export const profileUpdateSchema = z.object({

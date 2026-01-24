@@ -614,6 +614,7 @@ function PaymentMethodsTab() {
     feeValue: "",
     minAmount: "",
     maxAmount: "",
+    order: 0,
   });
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [saveLoading, setSaveLoading] = React.useState(false);
@@ -689,6 +690,7 @@ function PaymentMethodsTab() {
       feeValue: "",
       minAmount: "",
       maxAmount: "",
+      order: methods.length, // Put at the end
     });
     setDialogOpen(true);
   };
@@ -707,6 +709,7 @@ function PaymentMethodsTab() {
       feeValue: method.fees?.value?.toString() || "",
       minAmount: method.minAmount?.toString() || "",
       maxAmount: method.maxAmount?.toString() || "",
+      order: method.order,
     });
     setDialogOpen(true);
   };
@@ -776,7 +779,7 @@ function PaymentMethodsTab() {
           }
         });
         setErrors(fieldErrors);
-        toast.error("Please check the form for errors");
+        toast.error(`Validation error: ${error.errors[0]?.message || "Check form"}`);
       } else {
         console.error("Save payment method error:", error);
         toast.error("An error occurred while saving");
@@ -1095,6 +1098,18 @@ function PaymentMethodsTab() {
                 : "Add a new payment method for customers."}
             </DialogDescription>
           </DialogHeader>
+          {Object.keys(errors).length > 0 && (
+            <div className="mx-6 mt-4 rounded-md bg-destructive/10 p-3">
+              <p className="text-sm font-medium text-destructive">Please fix the following errors:</p>
+              <ul className="mt-1 list-inside list-disc text-xs text-destructive">
+                {Object.entries(errors).map(([field, message]) => (
+                  <li key={field}>
+                    <span className="font-semibold">{field}:</span> {message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
             {!editingMethod && (
               <div className="space-y-2">
