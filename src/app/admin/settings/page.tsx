@@ -45,6 +45,16 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
+import { ZodError } from "zod";
+import {
+  shippingFeeSchema,
+  bannerSchema,
+  adminSchema,
+  passwordChangeSchema,
+  paymentMethodSchema,
+  profileUpdateSchema,
+} from "~/lib/validation-schemas";
+import { cn } from "~/lib/cn";
 import { resolveImageUrl } from "~/lib/image-utils";
 
 import { Badge } from "~/ui/primitives/badge";
@@ -124,6 +134,7 @@ function ShippingFeesTab() {
     isFreeShipping: false,
     isActive: true,
   });
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [saveLoading, setSaveLoading] = React.useState(false);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
 
@@ -188,7 +199,7 @@ function ShippingFeesTab() {
     setEditingFee(fee);
     setFormData({
       name: fee.name,
-      fee: fee.fee.toString(),
+      fee: fee.fee?.toString() || "0",
       isFreeShipping: fee.isFreeShipping,
       isActive: fee.isActive,
     });
@@ -196,18 +207,14 @@ function ShippingFeesTab() {
   };
 
   const handleSave = async () => {
-    if (!formData.name) {
-      toast.error("Location name is required");
-      return;
-    }
-
-    if (!formData.isFreeShipping && !formData.fee) {
-      toast.error("Shipping fee is required when not free shipping");
-      return;
-    }
-
+    setErrors({});
     setSaveLoading(true);
     try {
+      const validatedData = shippingFeeSchema.parse({
+        ...formData,
+        fee: formData.isFreeShipping ? 0 : parseFloat(formData.fee || "0"),
+      });
+
       const token = localStorage.getItem("mk-dental-token");
 
       if (!token) {
@@ -227,12 +234,7 @@ function ShippingFeesTab() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: formData.name,
-          fee: formData.isFreeShipping ? 0 : parseFloat(formData.fee || "0"),
-          isFreeShipping: formData.isFreeShipping,
-          isActive: formData.isActive,
-        }),
+        body: JSON.stringify(validatedData),
       });
 
       if (response.status === 401) {
@@ -252,8 +254,19 @@ function ShippingFeesTab() {
         toast.error(data.message || "Failed to save shipping fee");
       }
     } catch (error) {
-      console.error("Save shipping fee error:", error);
-      toast.error("An error occurred while saving");
+      if (error instanceof ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path) {
+            fieldErrors[err.path.join(".")] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast.error("Please check the form for errors");
+      } else {
+        console.error("Save shipping fee error:", error);
+        toast.error("An error occurred while saving");
+      }
     } finally {
       setSaveLoading(false);
     }
@@ -467,7 +480,9 @@ function ShippingFeesTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
+                className={cn(errors.name && "border-destructive")}
               />
+              {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
             </div>
 
             <div className="flex items-center justify-between">
@@ -496,7 +511,9 @@ function ShippingFeesTab() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, fee: e.target.value }))
                   }
+                  className={cn(errors.fee && "border-destructive")}
                 />
+                {errors.fee && <p className="text-xs text-destructive">{errors.fee}</p>}
               </div>
             )}
 
@@ -598,6 +615,7 @@ function PaymentMethodsTab() {
     minAmount: "",
     maxAmount: "",
   });
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [saveLoading, setSaveLoading] = React.useState(false);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
   const [toggleLoading, setToggleLoading] = React.useState<string | null>(null);
@@ -686,7 +704,7 @@ function PaymentMethodsTab() {
       enabled: method.enabled,
       testMode: method.testMode || false,
       feeType: method.fees ? method.fees.type : "none",
-      feeValue: method.fees ? method.fees.value.toString() : "",
+      feeValue: method.fees?.value?.toString() || "",
       minAmount: method.minAmount?.toString() || "",
       maxAmount: method.maxAmount?.toString() || "",
     });
@@ -694,13 +712,23 @@ function PaymentMethodsTab() {
   };
 
   const handleSave = async () => {
-    if (!formData.name && !editingMethod) {
-      toast.error("Payment method name is required");
-      return;
-    }
-
+    setErrors({});
     setSaveLoading(true);
     try {
+      const validatedData = paymentMethodSchema.parse({
+        ...formData,
+        name: editingMethod ? formData.name : formData.name.toLowerCase().replace(/\s+/g, "_"),
+        fees: formData.feeType !== "none" && formData.feeValue
+          ? {
+            type: formData.feeType,
+            value: parseFloat(formData.feeValue),
+          }
+          : null,
+        minAmount: formData.minAmount ? parseFloat(formData.minAmount) : null,
+        maxAmount: formData.maxAmount ? parseFloat(formData.maxAmount) : null,
+        displayName: formData.displayName || formData.name,
+      });
+
       const token = localStorage.getItem("mk-dental-token");
 
       if (!token) {
@@ -714,42 +742,13 @@ function PaymentMethodsTab() {
         : "/api/admin/payments/methods";
       const method = editingMethod ? "PUT" : "POST";
 
-      const body: Record<string, unknown> = {
-        displayName: formData.displayName || formData.name,
-        description: formData.description,
-        instructions: formData.instructions || undefined,
-        icon: formData.icon,
-        enabled: formData.enabled,
-        testMode: formData.testMode,
-      };
-
-      if (!editingMethod) {
-        body.name = formData.name.toLowerCase().replace(/\s+/g, "_");
-      }
-
-      if (formData.feeType !== "none" && formData.feeValue) {
-        body.fees = {
-          type: formData.feeType,
-          value: parseFloat(formData.feeValue),
-        };
-      } else {
-        body.fees = null;
-      }
-
-      if (formData.minAmount) {
-        body.minAmount = parseFloat(formData.minAmount);
-      }
-      if (formData.maxAmount) {
-        body.maxAmount = parseFloat(formData.maxAmount);
-      }
-
       const response = await fetch(url, {
         method,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(validatedData),
       });
 
       if (response.status === 401) {
@@ -769,8 +768,19 @@ function PaymentMethodsTab() {
         toast.error(data.message || "Failed to save payment method");
       }
     } catch (error) {
-      console.error("Save payment method error:", error);
-      toast.error("An error occurred while saving");
+      if (error instanceof ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path) {
+            fieldErrors[err.path.join(".")] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast.error("Please check the form for errors");
+      } else {
+        console.error("Save payment method error:", error);
+        toast.error("An error occurred while saving");
+      }
     } finally {
       setSaveLoading(false);
     }
@@ -1096,10 +1106,14 @@ function PaymentMethodsTab() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
+                  className={cn(errors.name && "border-destructive")}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Lowercase, use underscores for spaces
-                </p>
+                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                {!errors.name && (
+                  <p className="text-xs text-muted-foreground">
+                    Lowercase, use underscores for spaces
+                  </p>
+                )}
               </div>
             )}
 
@@ -1112,7 +1126,9 @@ function PaymentMethodsTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, displayName: e.target.value }))
                 }
+                className={cn(errors.displayName && "border-destructive")}
               />
+              {errors.displayName && <p className="text-xs text-destructive">{errors.displayName}</p>}
             </div>
 
             <div className="space-y-2">
@@ -1124,7 +1140,9 @@ function PaymentMethodsTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, description: e.target.value }))
                 }
+                className={cn(errors.description && "border-destructive")}
               />
+              {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
             </div>
 
             <div className="space-y-2">
@@ -1136,7 +1154,9 @@ function PaymentMethodsTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, instructions: e.target.value }))
                 }
+                className={cn(errors.instructions && "border-destructive")}
               />
+              {errors.instructions && <p className="text-xs text-destructive">{errors.instructions}</p>}
             </div>
 
             <div className="space-y-2">
@@ -1190,7 +1210,9 @@ function PaymentMethodsTab() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, feeValue: e.target.value }))
                     }
+                    className={cn(errors["fees.value"] && "border-destructive")}
                   />
+                  {errors["fees.value"] && <p className="text-xs text-destructive">{errors["fees.value"]}</p>}
                 </div>
               )}
             </div>
@@ -1206,7 +1228,9 @@ function PaymentMethodsTab() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, minAmount: e.target.value }))
                   }
+                  className={cn(errors.minAmount && "border-destructive")}
                 />
+                {errors.minAmount && <p className="text-xs text-destructive">{errors.minAmount}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pm-maxAmount">Max Amount (EGP)</Label>
@@ -1218,7 +1242,9 @@ function PaymentMethodsTab() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, maxAmount: e.target.value }))
                   }
+                  className={cn(errors.maxAmount && "border-destructive")}
                 />
+                {errors.maxAmount && <p className="text-xs text-destructive">{errors.maxAmount}</p>}
               </div>
             </div>
 
@@ -1339,12 +1365,13 @@ function AccountSettingsTab() {
     storeAddress: "",
     orderPrefix: "MKD",
   });
-  const [adminProfile, setAdminProfile] = React.useState<AdminProfile | null>(null);
   const [profileFormData, setProfileFormData] = React.useState({
     firstName: "",
     lastName: "",
     phone: "",
   });
+  const [profileErrors, setProfileErrors] = React.useState<Record<string, string>>({});
+  const [adminProfile, setAdminProfile] = React.useState<AdminProfile | null>(null);
 
   const fetchSettings = React.useCallback(async () => {
     setLoading(true);
@@ -1425,8 +1452,11 @@ function AccountSettingsTab() {
   };
 
   const handleProfileSave = async () => {
+    setProfileErrors({});
     setProfileSaveLoading(true);
     try {
+      const validatedData = profileUpdateSchema.parse(profileFormData);
+
       const token = localStorage.getItem("mk-dental-token");
 
       if (!token) {
@@ -1441,7 +1471,7 @@ function AccountSettingsTab() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(profileFormData),
+        body: JSON.stringify(validatedData),
       });
 
       if (response.status === 401) {
@@ -1466,8 +1496,19 @@ function AccountSettingsTab() {
         toast.error(data.message || "Failed to update profile");
       }
     } catch (error) {
-      console.error("Save profile error:", error);
-      toast.error("An error occurred while saving");
+      if (error instanceof ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path) {
+            fieldErrors[err.path.join(".")] = err.message;
+          }
+        });
+        setProfileErrors(fieldErrors);
+        toast.error("Please check the form for errors");
+      } else {
+        console.error("Save profile error:", error);
+        toast.error("An error occurred while saving");
+      }
     } finally {
       setProfileSaveLoading(false);
     }
@@ -1526,7 +1567,9 @@ function AccountSettingsTab() {
                   onChange={(e) =>
                     setProfileFormData((prev) => ({ ...prev, firstName: e.target.value }))
                   }
+                  className={cn(profileErrors.firstName && "border-destructive")}
                 />
+                {profileErrors.firstName && <p className="text-xs text-destructive">{profileErrors.firstName}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
@@ -1537,7 +1580,9 @@ function AccountSettingsTab() {
                   onChange={(e) =>
                     setProfileFormData((prev) => ({ ...prev, lastName: e.target.value }))
                   }
+                  className={cn(profileErrors.lastName && "border-destructive")}
                 />
+                {profileErrors.lastName && <p className="text-xs text-destructive">{profileErrors.lastName}</p>}
               </div>
             </div>
 
@@ -1550,7 +1595,9 @@ function AccountSettingsTab() {
                 onChange={(e) =>
                   setProfileFormData((prev) => ({ ...prev, phone: e.target.value }))
                 }
+                className={cn(profileErrors.phone && "border-destructive")}
               />
+              {profileErrors.phone && <p className="text-xs text-destructive">{profileErrors.phone}</p>}
             </div>
           </CardContent>
           <div className="flex justify-end px-6 pb-6">
@@ -1617,6 +1664,7 @@ function BannersTab() {
     backgroundColor: "#1a73e8",
     textColor: "#ffffff",
   });
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [saveLoading, setSaveLoading] = React.useState(false);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
   const [toggleLoading, setToggleLoading] = React.useState<string | null>(null);
@@ -1768,7 +1816,7 @@ function BannersTab() {
       linkTarget: banner.linkTarget || "",
       buttonText: banner.buttonText || "",
       position: banner.position,
-      order: banner.order.toString(),
+      order: banner.order?.toString() || "0",
       isActive: banner.isActive,
       startDate: banner.startDate ? banner.startDate.split("T")[0] : "",
       endDate: banner.endDate ? banner.endDate.split("T")[0] : "",
@@ -1781,12 +1829,12 @@ function BannersTab() {
   };
 
   const handleSave = async () => {
-    if (!formData.title.trim()) {
-      toast.error("Banner title is required");
-      return;
-    }
+    setErrors({});
+    let finalImageUrl = formData.image;
 
+    // Check image early to avoid redundant uploads if title is missing (though Zod handles this)
     if (!formData.image.trim() && !mainImageFile) {
+      setErrors((prev) => ({ ...prev, image: "Banner image is required" }));
       toast.error("Banner image is required");
       return;
     }
@@ -1802,16 +1850,19 @@ function BannersTab() {
       }
 
       // 1. Upload image if selected
-      let finalImageUrl = formData.image;
-
       if (mainImageFile) {
         toast.loading("Uploading image...", { id: "banner-upload" });
         finalImageUrl = await uploadBannerImage(mainImageFile);
-      }
-
-      if (mainImageFile) {
         toast.success("Image uploaded successfully", { id: "banner-upload" });
       }
+
+      const validatedData = bannerSchema.parse({
+        ...formData,
+        image: finalImageUrl,
+        order: parseInt(formData.order) || 0,
+        startDate: formData.startDate || null,
+        endDate: formData.endDate || null,
+      });
 
       // Get user ID for createdBy field
       const authData = localStorage.getItem("mk-dental-auth");
@@ -1822,30 +1873,13 @@ function BannersTab() {
         : "/api/admin/banners";
       const method = editingBanner ? "PUT" : "POST";
 
-      const body: Record<string, unknown> = {
-        title: formData.title,
-        subtitle: formData.subtitle || undefined,
-        image: finalImageUrl,
-        linkType: formData.linkType,
-        linkTarget: formData.linkTarget || undefined,
-        buttonText: formData.buttonText || undefined,
-        position: formData.position,
-        order: parseInt(formData.order) || 0,
-        isActive: formData.isActive,
-        backgroundColor: formData.backgroundColor,
-        textColor: formData.textColor,
+      const payload: Record<string, unknown> = {
+        ...validatedData,
       };
 
       // Add createdBy for new banners
       if (!editingBanner && userId) {
-        body.createdBy = userId;
-      }
-
-      if (formData.startDate) {
-        body.startDate = new Date(formData.startDate).toISOString();
-      }
-      if (formData.endDate) {
-        body.endDate = new Date(formData.endDate).toISOString();
+        payload.createdBy = userId;
       }
 
       const response = await fetch(url, {
@@ -1854,7 +1888,7 @@ function BannersTab() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
       });
 
       if (response.status === 401) {
@@ -1874,8 +1908,19 @@ function BannersTab() {
         toast.error(data.message || "Failed to save banner");
       }
     } catch (error) {
-      console.error("Save banner error:", error);
-      toast.error("An error occurred while saving");
+      if (error instanceof ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path) {
+            fieldErrors[err.path.join(".")] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast.error("Please check the form for errors");
+      } else {
+        console.error("Save banner error:", error);
+        toast.error("An error occurred while saving");
+      }
     } finally {
       setSaveLoading(false);
     }
@@ -2173,7 +2218,9 @@ function BannersTab() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, title: e.target.value }))
                   }
+                  className={cn(errors.title && "border-destructive")}
                 />
+                {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="subtitle">Subtitle</Label>
@@ -2184,15 +2231,20 @@ function BannersTab() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, subtitle: e.target.value }))
                   }
+                  className={cn(errors.subtitle && "border-destructive")}
                 />
+                {errors.subtitle && <p className="text-xs text-destructive">{errors.subtitle}</p>}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Banner Image *</Label>
+              <Label className={cn(errors.image && "text-destructive")}>Banner Image *</Label>
               <div className="flex flex-col gap-3">
                 {mainImagePreview ? (
-                  <div className="relative aspect-[21/9] w-full rounded-lg overflow-hidden border bg-muted">
+                  <div className={cn(
+                    "relative aspect-[21/9] w-full rounded-lg overflow-hidden border bg-muted",
+                    errors.image && "border-destructive"
+                  )}>
                     <img
                       src={mainImagePreview.startsWith("blob:") ? mainImagePreview : resolveImageUrl(mainImagePreview)}
                       alt="Preview"
@@ -2210,14 +2262,18 @@ function BannersTab() {
                   </div>
                 ) : (
                   <div
-                    className="flex aspect-[21/9] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 hover:bg-muted/50 transition-colors"
+                    className={cn(
+                      "flex aspect-[21/9] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 hover:bg-muted/50 transition-colors",
+                      errors.image && "border-destructive border-solid bg-destructive/5"
+                    )}
                     onClick={() => document.getElementById("main-image-upload")?.click()}
                   >
-                    <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
-                    <span className="text-xs text-muted-foreground font-medium">Click to upload banner image</span>
+                    <ImagePlus className={cn("h-8 w-8 mb-2", errors.image ? "text-destructive" : "text-muted-foreground")} />
+                    <span className={cn("text-xs font-medium", errors.image ? "text-destructive" : "text-muted-foreground")}>Click to upload banner image</span>
                     <span className="text-[10px] text-muted-foreground mt-1">Recommended size: 1920x800px or 16:9</span>
                   </div>
                 )}
+                {errors.image && <p className="text-xs text-destructive">{errors.image}</p>}
                 <input
                   id="main-image-upload"
                   type="file"
@@ -2312,7 +2368,9 @@ function BannersTab() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, order: e.target.value }))
                   }
+                  className={cn(errors.order && "border-destructive")}
                 />
+                {errors.order && <p className="text-xs text-destructive">{errors.order}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="backgroundColor">Background Color</Label>
@@ -2368,7 +2426,9 @@ function BannersTab() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, startDate: e.target.value }))
                   }
+                  className={cn(errors.startDate && "border-destructive")}
                 />
+                {errors.startDate && <p className="text-xs text-destructive">{errors.startDate}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="endDate">End Date</Label>
@@ -2379,7 +2439,9 @@ function BannersTab() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, endDate: e.target.value }))
                   }
+                  className={cn(errors.endDate && "border-destructive")}
                 />
+                {errors.endDate && <p className="text-xs text-destructive">{errors.endDate}</p>}
               </div>
             </div>
 
@@ -2469,6 +2531,7 @@ function AdminsTab() {
     role: "admin" as "admin" | "super_admin",
     isActive: true,
   });
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [saveLoading, setSaveLoading] = React.useState(false);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
   const [toggleLoading, setToggleLoading] = React.useState<string | null>(null);
@@ -2554,32 +2617,18 @@ function AdminsTab() {
   };
 
   const handleSave = async () => {
-    if (!formData.username.trim()) {
-      toast.error("Username is required");
-      return;
-    }
-
-    if (!formData.email.trim()) {
-      toast.error("Email is required");
-      return;
-    }
-
-
-    if (!formData.firstName || !formData.firstName.trim()) {
-      toast.error("First name is required");
-      return;
-    }
-    if (!formData.lastName || !formData.lastName.trim()) {
-      toast.error("Last name is required");
-      return;
-    }
-    if (!editingAdmin && !formData.password) {
-      toast.error("Password is required for new admin");
-      return;
-    }
-
+    setErrors({});
     setSaveLoading(true);
     try {
+      const validatedData = adminSchema.parse({
+        ...formData,
+        profile: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: "", // formData doesn't have phone, but schema allows optional
+        },
+      });
+
       const token = localStorage.getItem("mk-dental-token");
 
       if (!token) {
@@ -2593,25 +2642,13 @@ function AdminsTab() {
         : "/api/admin/admins";
       const method = editingAdmin ? "PUT" : "POST";
 
-      const body: Record<string, unknown> = {
-        username: formData.username,
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        role: formData.role,
-        isActive: formData.isActive,
-      };
-      if (formData.password) {
-        body.password = formData.password;
-      }
-
       const response = await fetch(url, {
         method,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(validatedData),
       });
 
       if (response.status === 401) {
@@ -2631,8 +2668,19 @@ function AdminsTab() {
         toast.error(data.message || "Failed to save admin");
       }
     } catch (error) {
-      console.error("Save admin error:", error);
-      toast.error("An error occurred while saving");
+      if (error instanceof ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path) {
+            fieldErrors[err.path.join(".")] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast.error("Please check the form for errors");
+      } else {
+        console.error("Save admin error:", error);
+        toast.error("An error occurred while saving");
+      }
     } finally {
       setSaveLoading(false);
     }
@@ -2870,7 +2918,9 @@ function AdminsTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, firstName: e.target.value }))
                 }
+                className={cn(errors["profile.firstName"] && "border-destructive")}
               />
+              {errors["profile.firstName"] && <p className="text-xs text-destructive">{errors["profile.firstName"]}</p>}
             </div>
 
             <div className="space-y-2">
@@ -2882,7 +2932,9 @@ function AdminsTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, lastName: e.target.value }))
                 }
+                className={cn(errors["profile.lastName"] && "border-destructive")}
               />
+              {errors["profile.lastName"] && <p className="text-xs text-destructive">{errors["profile.lastName"]}</p>}
             </div>
 
             <div className="space-y-2">
@@ -2894,7 +2946,9 @@ function AdminsTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, username: e.target.value }))
                 }
+                className={cn(errors.username && "border-destructive")}
               />
+              {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
             </div>
 
             <div className="space-y-2">
@@ -2907,7 +2961,9 @@ function AdminsTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, email: e.target.value }))
                 }
+                className={cn(errors.email && "border-destructive")}
               />
+              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
@@ -2922,7 +2978,9 @@ function AdminsTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, password: e.target.value }))
                 }
+                className={cn(errors.password && "border-destructive")}
               />
+              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
             </div>
 
             <div className="space-y-2">
@@ -3012,28 +3070,16 @@ function SecurityTab() {
   const [showCurrentPassword, setShowCurrentPassword] = React.useState(false);
   const [showNewPassword, setShowNewPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
 
-    // Validation
-    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
-      toast.error("All fields are required");
-      return;
-    }
-
-    if (formData.newPassword !== formData.confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-
-    if (formData.newPassword.length < 8) {
-      toast.error("New password must be at least 8 characters");
-      return;
-    }
-
-    setLoading(true);
     try {
+      const validatedData = passwordChangeSchema.parse(formData);
+
+      setLoading(true);
       const token = localStorage.getItem("mk-dental-token");
       const response = await fetch("/api/admin/auth/change-password", {
         method: "PUT",
@@ -3041,7 +3087,7 @@ function SecurityTab() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(validatedData),
       });
 
       const data: any = await response.json();
@@ -3057,8 +3103,19 @@ function SecurityTab() {
         toast.error(data.message || "Failed to change password");
       }
     } catch (error) {
-      console.error("Change password error:", error);
-      toast.error("An error occurred while changing password");
+      if (error instanceof ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path) {
+            fieldErrors[err.path.join(".")] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast.error("Please check the form for errors");
+      } else {
+        console.error("Change password error:", error);
+        toast.error("An error occurred while changing password");
+      }
     } finally {
       setLoading(false);
     }
@@ -3085,6 +3142,7 @@ function SecurityTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, currentPassword: e.target.value }))
                 }
+                className={cn(errors.currentPassword && "border-destructive")}
               />
               <Button
                 type="button"
@@ -3096,6 +3154,7 @@ function SecurityTab() {
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </Button>
             </div>
+            {errors.currentPassword && <p className="text-xs text-destructive">{errors.currentPassword}</p>}
           </div>
 
           <div className="space-y-2">
@@ -3109,6 +3168,7 @@ function SecurityTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, newPassword: e.target.value }))
                 }
+                className={cn(errors.newPassword && "border-destructive")}
               />
               <Button
                 type="button"
@@ -3120,9 +3180,13 @@ function SecurityTab() {
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Password must be at least 8 characters long
-            </p>
+            {errors.newPassword ? (
+              <p className="text-xs text-destructive">{errors.newPassword}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Password must be at least 8 characters long
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -3136,6 +3200,7 @@ function SecurityTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))
                 }
+                className={cn(errors.confirmPassword && "border-destructive")}
               />
               <Button
                 type="button"
@@ -3147,6 +3212,7 @@ function SecurityTab() {
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </Button>
             </div>
+            {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
           </div>
 
           <Button type="submit" disabled={loading} className="mt-2">

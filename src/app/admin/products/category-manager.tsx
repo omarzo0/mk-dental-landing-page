@@ -11,6 +11,8 @@ import {
 import * as React from "react";
 import { toast } from "sonner";
 import { CategoryTableSkeleton } from "~/ui/components/admin/product-skeletons";
+import { categorySchema } from "~/lib/validation-schemas";
+import { ZodError } from "zod";
 
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
@@ -68,6 +70,7 @@ export function CategoryManager({ onUpdate }: CategoryManagerProps) {
     const [subcategories, setSubcategories] = React.useState<string[]>([]);
     const [newSubcategory, setNewSubcategory] = React.useState("");
     const [saveLoading, setSaveLoading] = React.useState(false);
+    const [errors, setErrors] = React.useState<Record<string, string>>({});
 
     const fetchCategories = React.useCallback(async () => {
         setLoading(true);
@@ -107,6 +110,7 @@ export function CategoryManager({ onUpdate }: CategoryManagerProps) {
         setShowInHomepage(false);
         setSubcategories([]);
         setNewSubcategory("");
+        setErrors({});
         setDialogOpen(true);
     };
 
@@ -129,13 +133,18 @@ export function CategoryManager({ onUpdate }: CategoryManagerProps) {
     };
 
     const handleSave = async () => {
-        if (!categoryName) {
-            toast.error("Category name is required");
-            return;
-        }
-
+        setErrors({});
         setSaveLoading(true);
         try {
+            const validatedData = categorySchema.parse({
+                name: categoryName,
+                icon,
+                isActive,
+                showInMenu,
+                showInHomepage,
+                subcategories: subcategories.map(s => ({ name: s })),
+            });
+
             const token = localStorage.getItem("mk-dental-token");
             console.log("Saving category, editingCategory:", editingCategory);
             const url = editingCategory
@@ -149,14 +158,7 @@ export function CategoryManager({ onUpdate }: CategoryManagerProps) {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    name: categoryName,
-                    icon,
-                    isActive,
-                    showInMenu,
-                    showInHomepage,
-                    subcategories: subcategories.map(s => ({ name: s })),
-                }),
+                body: JSON.stringify(validatedData),
             });
 
             const data = (await response.json()) as { success: boolean; message?: string };
@@ -170,8 +172,19 @@ export function CategoryManager({ onUpdate }: CategoryManagerProps) {
                 toast.error(data.message || "Failed to save category");
             }
         } catch (error) {
-            console.error("Save category error:", error);
-            toast.error("An error occurred while saving");
+            if (error instanceof ZodError) {
+                const fieldErrors: Record<string, string> = {};
+                error.errors.forEach((err) => {
+                    if (err.path) {
+                        fieldErrors[err.path.join(".")] = err.message;
+                    }
+                });
+                setErrors(fieldErrors);
+                toast.error("Please check the form for errors");
+            } else {
+                console.error("Save category error:", error);
+                toast.error("An error occurred while saving");
+            }
         } finally {
             setSaveLoading(false);
         }
@@ -329,7 +342,9 @@ export function CategoryManager({ onUpdate }: CategoryManagerProps) {
                                     value={categoryName}
                                     onChange={(e) => setCategoryName(e.target.value)}
                                     placeholder="Diagnostic, Surgical, etc."
+                                    className={errors.name ? "border-destructive" : ""}
                                 />
+                                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="cat-icon">Icon (Emoji/String)</Label>
@@ -379,12 +394,15 @@ export function CategoryManager({ onUpdate }: CategoryManagerProps) {
                         </div>
 
                         <div className="space-y-2 pt-2">
-                            <Label>Subcategories</Label>
+                            <Label className={Object.keys(errors).some(k => k.startsWith("subcategories")) ? "text-destructive" : ""}>
+                                Subcategories
+                            </Label>
                             <div className="flex gap-2">
                                 <Input
                                     value={newSubcategory}
                                     onChange={(e) => setNewSubcategory(e.target.value)}
                                     placeholder="Add subcategory..."
+                                    className={Object.keys(errors).some(k => k.startsWith("subcategories")) ? "border-destructive" : ""}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             e.preventDefault();
@@ -396,6 +414,11 @@ export function CategoryManager({ onUpdate }: CategoryManagerProps) {
                                     <Plus className="h-4 w-4" />
                                 </Button>
                             </div>
+                            {Object.keys(errors).some(k => k.startsWith("subcategories")) && (
+                                <p className="text-xs text-destructive">
+                                    {errors[Object.keys(errors).find(k => k.startsWith("subcategories"))!] || "Invalid subcategory data"}
+                                </p>
+                            )}
                             <div className="flex flex-wrap gap-2 mt-2">
                                 {subcategories.map((sub) => (
                                     <Badge key={sub} variant="secondary" className="pl-2 pr-1 py-1">

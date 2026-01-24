@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
+import { ZodError } from "zod";
+import { couponSchema } from "~/lib/validation-schemas";
 
 import { cn } from "~/lib/cn";
 import { CouponStatsSkeleton, CouponTableSkeleton } from "~/ui/components/admin/product-skeletons";
@@ -244,6 +246,7 @@ export default function AdminCouponsPage() {
   };
 
   const [formData, setFormData] = React.useState<CouponFormData>(initialFormData);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   const fetchCoupons = React.useCallback(async () => {
     setLoading(true);
@@ -436,38 +439,19 @@ export default function AdminCouponsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
 
-    if (!formData.code || !formData.name) {
-      toast.error("Please fill in code and name");
-      return;
-    }
-
-    if (formData.discountType !== "free_shipping" && !formData.discountValue) {
-      toast.error("Please enter a discount value");
-      return;
-    }
-
-    // Start and end dates are required for creating new coupons
-    if (!editingCoupon && (!formData.startDate || !formData.endDate)) {
-      toast.error("Please fill in start and end dates");
-      return;
-    }
-
-    setSaveLoading(true);
     try {
-      const token = localStorage.getItem("mk-dental-token");
-
-      if (!token) {
-        toast.error("Session expired. Please log in again.");
-        window.location.href = "/admin/login?expired=true";
-        return;
-      }
-
-      const body: Record<string, unknown> = {
-        name: formData.name,
-        discountType: formData.discountType,
+      const validatedData = couponSchema.parse({
+        ...formData,
         discountValue: formData.discountType === "free_shipping" ? 0 : parseFloat(formData.discountValue),
-        isActive: formData.isActive,
+        maxDiscountAmount: formData.maxDiscountAmount ? parseFloat(formData.maxDiscountAmount) : null,
+        minimumPurchase: formData.minimumPurchase ? parseFloat(formData.minimumPurchase) : 0,
+        minimumItems: formData.minimumItems ? parseInt(formData.minimumItems) : 0,
+        usageLimit: {
+          total: formData.usageLimitTotal ? parseInt(formData.usageLimitTotal) : null,
+          perCustomer: formData.usageLimitPerCustomer ? parseInt(formData.usageLimitPerCustomer) : null,
+        },
         restrictions: {
           newCustomersOnly: formData.newCustomersOnly,
           firstOrderOnly: formData.firstOrderOnly,
@@ -477,42 +461,13 @@ export default function AdminCouponsPage() {
           excludeProducts: [],
           productTypes: formData.productTypes,
         },
-      };
+      });
+      const token = localStorage.getItem("mk-dental-token");
 
-      // Only include optional fields if they have values
-      if (formData.description) {
-        body.description = formData.description;
-      }
-      if (formData.maxDiscountAmount) {
-        body.maxDiscountAmount = parseFloat(formData.maxDiscountAmount);
-      }
-      if (formData.minimumPurchase) {
-        body.minimumPurchase = parseFloat(formData.minimumPurchase);
-      }
-      if (formData.minimumItems) {
-        body.minimumItems = parseInt(formData.minimumItems);
-      }
-      if (formData.usageLimitTotal || formData.usageLimitPerCustomer) {
-        body.usageLimit = {
-          ...(formData.usageLimitTotal && { total: parseInt(formData.usageLimitTotal) }),
-          ...(formData.usageLimitPerCustomer && { perCustomer: parseInt(formData.usageLimitPerCustomer) }),
-        };
-      }
-      if (formData.notes) {
-        body.notes = formData.notes;
-      }
-
-      // Code is required for create, optional for update (but cannot be changed)
-      if (!editingCoupon) {
-        body.code = formData.code;
-      }
-
-      // Dates: required for create, optional for update
-      if (formData.startDate) {
-        body.startDate = formData.startDate;
-      }
-      if (formData.endDate) {
-        body.endDate = formData.endDate;
+      if (!token) {
+        toast.error("Session expired. Please log in again.");
+        window.location.href = "/admin/login?expired=true";
+        return;
       }
 
       const url = editingCoupon
@@ -526,7 +481,7 @@ export default function AdminCouponsPage() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(validatedData),
       });
 
       if (response.status === 401) {
@@ -549,8 +504,19 @@ export default function AdminCouponsPage() {
         toast.error(data.message || "Failed to save coupon");
       }
     } catch (error) {
-      console.error("Save coupon error:", error);
-      toast.error("An error occurred while saving");
+      if (error instanceof ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path) {
+            fieldErrors[err.path.join(".")] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast.error("Please check the form for errors");
+      } else {
+        console.error("Save coupon error:", error);
+        toast.error("An error occurred while saving");
+      }
     } finally {
       setSaveLoading(false);
     }
@@ -854,7 +820,7 @@ export default function AdminCouponsPage() {
                         code: e.target.value.toUpperCase(),
                       }))
                     }
-                    className="font-mono"
+                    className={cn("font-mono", errors.code && "border-destructive")}
                     disabled={!!editingCoupon}
                   />
                   {!editingCoupon && (
@@ -863,6 +829,7 @@ export default function AdminCouponsPage() {
                     </Button>
                   )}
                 </div>
+                {errors.code && <p className="text-xs text-destructive">{errors.code}</p>}
               </div>
 
               <div className="space-y-2">
@@ -874,7 +841,9 @@ export default function AdminCouponsPage() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
+                  className={cn(errors.name && "border-destructive")}
                 />
+                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -886,7 +855,7 @@ export default function AdminCouponsPage() {
                       setFormData((prev) => ({ ...prev, discountType: v }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={cn(errors.discountType && "border-destructive")}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -895,6 +864,7 @@ export default function AdminCouponsPage() {
                       <SelectItem value="free_shipping">Free Shipping</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.discountType && <p className="text-xs text-destructive">{errors.discountType}</p>}
                 </div>
 
                 {formData.discountType !== "free_shipping" && (
@@ -910,7 +880,9 @@ export default function AdminCouponsPage() {
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, discountValue: e.target.value }))
                       }
+                      className={cn(errors.discountValue && "border-destructive")}
                     />
+                    {errors.discountValue && <p className="text-xs text-destructive">{errors.discountValue}</p>}
                   </div>
                 )}
               </div>
@@ -938,7 +910,9 @@ export default function AdminCouponsPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, minimumPurchase: e.target.value }))
                     }
+                    className={cn(errors.minimumPurchase && "border-destructive")}
                   />
+                  {errors.minimumPurchase && <p className="text-xs text-destructive">{errors.minimumPurchase}</p>}
                 </div>
 
                 {formData.discountType === "percentage" && (
@@ -955,7 +929,9 @@ export default function AdminCouponsPage() {
                           maxDiscountAmount: e.target.value,
                         }))
                       }
+                      className={cn(errors.maxDiscountAmount && "border-destructive")}
                     />
+                    {errors.maxDiscountAmount && <p className="text-xs text-destructive">{errors.maxDiscountAmount}</p>}
                   </div>
                 )}
               </div>
@@ -971,7 +947,9 @@ export default function AdminCouponsPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, usageLimitTotal: e.target.value }))
                     }
+                    className={cn(errors["usageLimit.total"] && "border-destructive")}
                   />
+                  {errors["usageLimit.total"] && <p className="text-xs text-destructive">{errors["usageLimit.total"]}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -984,13 +962,15 @@ export default function AdminCouponsPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, usageLimitPerCustomer: e.target.value }))
                     }
+                    className={cn(errors["usageLimit.perCustomer"] && "border-destructive")}
                   />
+                  {errors["usageLimit.perCustomer"] && <p className="text-xs text-destructive">{errors["usageLimit.perCustomer"]}</p>}
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
+                  <Label htmlFor="startDate">Start Date *</Label>
                   <Input
                     id="startDate"
                     type="date"
@@ -998,11 +978,13 @@ export default function AdminCouponsPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, startDate: e.target.value }))
                     }
+                    className={cn(errors.startDate && "border-destructive")}
                   />
+                  {errors.startDate && <p className="text-xs text-destructive">{errors.startDate}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
+                  <Label htmlFor="endDate">End Date *</Label>
                   <Input
                     id="endDate"
                     type="date"
@@ -1010,7 +992,9 @@ export default function AdminCouponsPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, endDate: e.target.value }))
                     }
+                    className={cn(errors.endDate && "border-destructive")}
                   />
+                  {errors.endDate && <p className="text-xs text-destructive">{errors.endDate}</p>}
                 </div>
               </div>
 

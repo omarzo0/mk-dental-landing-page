@@ -287,7 +287,7 @@ export function PackageDialog({
         const uploadFormData = new FormData();
         uploadFormData.append("image", selectedNewFile);
 
-        const response = await fetch("/api/upload", {
+        const response = await fetch("/api/user/upload", {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
             body: uploadFormData,

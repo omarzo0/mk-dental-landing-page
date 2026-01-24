@@ -10,6 +10,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
+import { productSchema } from "~/lib/validation-schemas";
+import { ZodError } from "zod";
 
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
@@ -82,6 +84,7 @@ export default function NewProductPage() {
 
   const [selectedImage, setSelectedImage] = React.useState<File | null>(null);
   const [imagePreview, setImagePreview] = React.useState<string>("");
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
   const fetchCategories = React.useCallback(async () => {
     setCategoriesLoading(true);
     try {
@@ -220,16 +223,30 @@ export default function NewProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
     setIsLoading(true);
 
-    // Validate required fields
-    if (!formData.name || !formData.category || !formData.price) {
-      toast.error("Please fill in all required fields");
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      const validatedData = productSchema.parse({
+        ...formData,
+        price: parseFloat(formData.price) || 0,
+        images: selectedImage ? [URL.createObjectURL(selectedImage)] : [], // Temporary local URL for validation
+        inventory: {
+          quantity: parseInt(formData.stockQuantity) || 0,
+          lowStockAlert: parseInt(formData.lowStockThreshold) || 10,
+          trackInventory: true,
+        },
+        discount: {
+          ...formData.discount,
+          value: parseFloat(formData.discount.value) || 0,
+        },
+        specifications: {
+          size: formData.size
+            ? formData.size.split(",").map(s => parseFloat(s.trim())).filter(n => !isNaN(n))
+            : undefined
+        }
+      });
+
       const token = localStorage.getItem("mk-dental-token");
       if (!token) {
         toast.error("Please login to create products");
@@ -254,29 +271,8 @@ export default function NewProductPage() {
 
       // Build product data for API
       const productData = {
-        name: formData.name,
-        description: formData.description,
-        category: formData.category,
-        subcategory: formData.subcategory,
-        price: parseFloat(formData.price),
-        inventory: {
-          quantity: parseInt(formData.stockQuantity) || 0,
-          lowStockAlert: parseInt(formData.lowStockThreshold) || 10,
-          trackInventory: true,
-        },
-        status: formData.isActive ? "active" : "inactive",
-        productType: "single",
+        ...validatedData,
         images: uploadedUrls, // Always send as array
-        discount: {
-          type: formData.discount.type,
-          value: parseFloat(formData.discount.value) || 0,
-          isActive: formData.discount.isActive,
-        },
-        specifications: {
-          size: formData.size
-            ? formData.size.split(",").map(s => parseFloat(s.trim())).filter(n => !isNaN(n))
-            : undefined
-        }
       };
 
       console.log("Final product data to be sent:", JSON.stringify(productData, null, 2));
@@ -299,8 +295,19 @@ export default function NewProductPage() {
         toast.error(data.message || "Failed to create product");
       }
     } catch (error) {
-      console.error("Create product error:", error);
-      toast.error("Failed to create product");
+      if (error instanceof ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path) {
+            fieldErrors[err.path.join(".")] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast.error("Please check the form for errors");
+      } else {
+        console.error("Create product error:", error);
+        toast.error("Failed to create product");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -346,7 +353,9 @@ export default function NewProductPage() {
                     placeholder="Enter product name"
                     value={formData.name}
                     onChange={handleInputChange}
+                    className={errors.name ? "border-destructive" : ""}
                   />
+                  {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -357,8 +366,9 @@ export default function NewProductPage() {
                     placeholder="Enter product description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.description ? "border-destructive" : ""}`}
                   />
+                  {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -443,7 +453,9 @@ export default function NewProductPage() {
                     placeholder="0.00"
                     value={formData.price}
                     onChange={handleInputChange}
+                    className={errors.price ? "border-destructive" : ""}
                   />
+                  {errors.price && <p className="text-xs text-destructive">{errors.price}</p>}
                 </div>
 
                 <div className="space-y-4 pt-4 border-t">
@@ -487,7 +499,9 @@ export default function NewProductPage() {
                           placeholder="0"
                           value={formData.discount.value}
                           onChange={(e) => handleDiscountChange("value", e.target.value)}
+                          className={errors["discount.value"] ? "border-destructive" : ""}
                         />
+                        {errors["discount.value"] && <p className="text-xs text-destructive">{errors["discount.value"]}</p>}
                       </div>
 
                       {discountedPrice !== parseFloat(formData.price) && (
@@ -523,7 +537,9 @@ export default function NewProductPage() {
                       placeholder="0"
                       value={formData.stockQuantity}
                       onChange={handleInputChange}
+                      className={errors["inventory.quantity"] ? "border-destructive" : ""}
                     />
+                    {errors["inventory.quantity"] && <p className="text-xs text-destructive">{errors["inventory.quantity"]}</p>}
                   </div>
 
                   <div className="space-y-4">
@@ -535,7 +551,9 @@ export default function NewProductPage() {
                       placeholder="10"
                       value={formData.lowStockThreshold}
                       onChange={handleInputChange}
+                      className={errors["inventory.lowStockAlert"] ? "border-destructive" : ""}
                     />
+                    {errors["inventory.lowStockAlert"] && <p className="text-xs text-destructive">{errors["inventory.lowStockAlert"]}</p>}
                     <p className="text-xs text-muted-foreground">
                       Alert when stock falls below this number
                     </p>
@@ -564,7 +582,9 @@ export default function NewProductPage() {
                     placeholder="e.g. 10, 20, 30"
                     value={formData.size}
                     onChange={handleInputChange}
+                    className={errors["specifications.size"] ? "border-destructive" : ""}
                   />
+                  {errors["specifications.size"] && <p className="text-xs text-destructive">{errors["specifications.size"]}</p>}
                   <p className="text-xs text-muted-foreground">
                     Enter numeric sizes separated by commas
                   </p>
@@ -680,6 +700,7 @@ export default function NewProductPage() {
                   id="image"
                   onChange={handleImageChange}
                 />
+                {errors.images && <p className="text-xs text-destructive mt-2 text-center">{errors.images}</p>}
                 <p className="text-xs text-muted-foreground">
                   Recommended: 800x800px, Max 5MB per image
                 </p>
